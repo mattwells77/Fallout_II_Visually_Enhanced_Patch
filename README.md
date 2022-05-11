@@ -1,1 +1,2 @@
-# Fallout-II-Visually-Enhanced-Patch
+# Fallout II Visually Enhanced Patch
+A work in progress...
