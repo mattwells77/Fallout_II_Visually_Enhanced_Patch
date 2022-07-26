@@ -1,0 +1,465 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{4afbc560-4dd3-4374-90b6-c66af7f7afdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\compiled_h">
+      <UniqueIdentifier>{3c748f8b-abfb-41b1-a941-2ced18bf3ffc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="configTools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_Game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_General.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_Graphics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_Mouse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_Movies.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_RenderTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx_Windows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="errors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_File.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_GameMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_General.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Graphics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Msg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Objects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Scripts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Text.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fall_Windows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="game_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="memwrite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="modifications.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="text.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win_fall.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Colour_32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Colour_32_Alpha.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Colour_32_Brightness_ZeroMasked.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Colour_32_RevAlpha_ZeroMasked.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawHexFog.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawHexLight_OriginalLighting.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawObjLight8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawObjLight32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawWallLight8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_DrawWallLight32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Fade_Colour_32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_GaussianBlurU.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_GaussianBlurV.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjFlat8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjFlat32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjUpright8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjUpright8_OriginalLighting.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjUpright32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ObjUpright32_OriginalLighting.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_Colour_8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_Colour_32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_OuterEdge8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_OuterEdge32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_Palette_8.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Outline_Palette_32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_RenderFloorLight32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_RenderRoof32.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ShadowsStep1_DrawBase.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ShadowsStep2_Build.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ShadowsStep3_Blur.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ShadowsStep4_RadialBlur.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_ShadowsStep5_Combine.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\compiled_h\VS_Basic.h">
+      <Filter>shaders\compiled_h</Filter>
+    </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="configTools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_General.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_Graphics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_Mouse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_Movies.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_RenderTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx_Windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="errors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_File.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_GameMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_General.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Graphics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Msg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Objects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Scripts.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Text.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fall_Windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="game_map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memwrite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Char.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Credits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Death.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Dialogue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_EndSlides.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_GameMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_InterfaceBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Inventory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Load_Save.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_MainMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Movies.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Other.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Pause.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Pipboy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_Splash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mod_WorldMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="text.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win_fall.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders\PS_Basic_Tex_8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Basic_Tex_32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Colour_32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Colour_32_Alpha.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Colour_32_Brightness_ZeroMasked.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Colour_32_RevAlpha_ZeroMasked.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawHexFog.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawHexLight_OriginalLighting.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawObjLight8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawObjLight32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawWallLight8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_DrawWallLight32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Fade_Colour_32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_GaussianBlurU.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_GaussianBlurV.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjFlat8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjFlat32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjUpright8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjUpright8_OriginalLighting.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjUpright32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ObjUpright32_OriginalLighting.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_Colour_8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_Colour_32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_OuterEdge8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_OuterEdge32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_Palette_8.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_Palette_32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_RenderFloorLight32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_RenderRoof32.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ShadowsStep1_DrawBase.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ShadowsStep2_Build.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ShadowsStep3_Blur.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ShadowsStep4_RadialBlur.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_ShadowsStep5_Combine.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\VS_Basic.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\shaderPixel_Main.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shaderVertex_Main.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="version.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
