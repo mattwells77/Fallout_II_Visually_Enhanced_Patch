@@ -1496,7 +1496,7 @@ LONG Draw_Wielded_Button() {
                 cfrm = nullptr;
                 break;
             }
-            if (isCalledShot & !cfrm) {//draw called shot bullseye
+            if (isCalledShot && !cfrm) {//draw called shot bullseye
                 cfrm = new FRMCached(0x06000120);//BULLSEYE.FRM   ; bullseye for interface button
                 if (cfrm) {
                     pFrame = cfrm->GetFrame(0, 0);
