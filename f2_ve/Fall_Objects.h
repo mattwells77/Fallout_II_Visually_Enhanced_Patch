@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 struct DAMAGEstats {
 	DWORD normal;//0x04
 	DWORD laser;//0x08

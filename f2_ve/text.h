@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 #define FLG_TEXT_WORDWRAP   0x00000001
 #define FLG_TEXT_CENTRED    0x00000002
 #define FLG_TEXT_INDENT     0x00000004

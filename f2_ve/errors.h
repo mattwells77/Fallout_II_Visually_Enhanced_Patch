@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 void Fallout_Debug_Error(const char* format, ...);
 void Fallout_Debug_Info(const char* format, ...);
 

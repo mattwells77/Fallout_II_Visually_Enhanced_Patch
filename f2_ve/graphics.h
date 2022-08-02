@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 #define FRM_VER_ORIGINAL    0x00000004
 #define FRM_VER_32BIT       0x00000005
 

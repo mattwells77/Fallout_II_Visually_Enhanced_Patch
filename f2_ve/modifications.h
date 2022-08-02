@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 #define IFACE_BAR_HEIGHT 99
 
 extern DWORD SCR_WIDTH;

@@ -56,6 +56,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\f2_ve_Shared\f2_ve_Shared.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -235,7 +236,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="configTools.h" />
     <ClInclude Include="Dx_Game.h" />
     <ClInclude Include="Dx_General.h" />
     <ClInclude Include="Dx_Graphics.h" />
@@ -259,7 +259,6 @@
     <ClInclude Include="memwrite.h" />
     <ClInclude Include="modifications.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_32.h" />
     <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_8.h" />
     <ClInclude Include="shaders\compiled_h\PS_Colour_32.h" />
@@ -300,7 +299,6 @@
     <ClInclude Include="win_fall.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="configTools.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Dx_Game.cpp" />
     <ClCompile Include="Dx_General.cpp" />

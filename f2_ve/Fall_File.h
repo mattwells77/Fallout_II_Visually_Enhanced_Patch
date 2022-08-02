@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 void Fallout_Functions_Setup_File();
 
 bool FalloutData_Does_File_Exist(const char* path);

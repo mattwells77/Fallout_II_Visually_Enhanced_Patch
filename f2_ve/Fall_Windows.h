@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 struct ButtonStruct {
 	LONG ref;//0x00
 	DWORD flags;//0x04

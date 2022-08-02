@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 //mouse button flags
 #define FLG_MouseL_Press 0x1
 #define FLG_MouseL_Hold  0x4

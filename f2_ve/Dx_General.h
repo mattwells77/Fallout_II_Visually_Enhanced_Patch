@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 #include <d3d11.h>
 #include <d3d11_2.h>
 #include <d3dcompiler.h>

@@ -22,8 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
-
 struct GLYPH_FON {
     DWORD width;		// glyph width in points - 1 point is 1 bit in size
     DWORD offset;		// offset in buffer for glyph image data

@@ -22,7 +22,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "pch.h"
 #include "Fall_GameMap.h"
 
 #define FOG_QUAD_WIDTH  96
