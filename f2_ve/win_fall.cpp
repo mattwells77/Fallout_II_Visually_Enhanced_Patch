@@ -1378,7 +1378,7 @@ LRESULT CALLBACK KeyboardProcMain(int code, WPARAM wParam, LPARAM lParam) {
     return CallNextHookEx(*keyboardHook, code, wParam, lParam);
 }
 
-
+/*
 //__________________________________________________________________________
 int SetHiResDataPath(char* path1, int isFolder1, char* path2, int isFolder2) {
 
@@ -1420,7 +1420,7 @@ void __declspec(naked) set_data_path(void) {
         ret
     }
 }
-
+*/
 
 #define DOUBLE_CLICK_TIME   400
 bool isDoubleClick = false;
@@ -1494,7 +1494,7 @@ void __declspec(naked) h_check_double_click(void) {
 void Modifications_Win_CH() {
     //To-Do Modifications_Win_CH
 
-    FuncWrite32(0x443AC5, 0x0810F0, (DWORD)&set_data_path);
+    ///FuncWrite32(0x443AC5, 0x0810F0, (DWORD)&set_data_path);
 
     pFALL_RC = (RECT*)0x6BCF5C;
 
@@ -1613,7 +1613,7 @@ void Modifications_Win_CH() {
 //____________________________
 void Modifications_Win_MULTI() {
 
-    FuncReplace32(0x444255, 0x081AD7, (DWORD)&set_data_path);
+    ///FuncReplace32(0x444255, 0x081AD7, (DWORD)&set_data_path);
 
     pFALL_RC = (RECT*)FixAddress(0x6AC9F0);
 

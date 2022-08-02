@@ -35,7 +35,6 @@ char msg_buff[260];
 //_______________________________________________
 void Fallout_Debug_Error(const char* format, ...) {
 #ifdef PRINT_DEBUG_ERRORS
-    fall_Debug_printf("f2_ve ERROR!: ");
     va_list args;
     va_start(args, format);
     vsprintf_s(msg_buff, format, args);

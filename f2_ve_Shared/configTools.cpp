@@ -150,8 +150,8 @@ void ConfigCreate() {
     ConfigWriteInt(L"MAIN", L"SCALE_LEVEL", 1);
     ConfigWriteInt(L"MAIN", L"WINDOWED", 0);
     ConfigWriteInt(L"MAIN", L"WIN_DATA", 0);
-    ConfigWriteString(L"MAIN", L"f2_res_dat", L"f2_res.dat");
-    ConfigWriteString(L"MAIN", L"f2_res_patches", L"data\\");
+    //ConfigWriteString(L"MAIN", L"f2_res_dat", L"f2_res.dat");
+    //ConfigWriteString(L"MAIN", L"f2_res_patches", L"data\\");
 
     ConfigWriteInt(L"INPUT", L"ALT_MOUSE_INPUT", 1);
     ConfigWriteInt(L"INPUT", L"SCROLLWHEEL_FOCUS_PRIMARY_MENU", 1);
@@ -176,14 +176,14 @@ void ConfigCreate() {
     ConfigWriteInt(L"WORLD_MAP", L"DRAW_CITIES", 1);
 
 
-    ConfigWriteInt(L"IFACE", L"IFACE_BAR_SIDE_ART", 1);
-    ConfigWriteInt(L"IFACE", L"IFACE_BAR_WIDTH", 800);
+    ConfigWriteInt(L"IFACE", L"IFACE_BAR_SIDE_ART", 0);
+    ConfigWriteInt(L"IFACE", L"IFACE_BAR_WIDTH", 640);
     ConfigWriteInt(L"IFACE", L"IFACE_BAR_LOCATION", 0);//0 = centre, 1 = left, 2 = right
     //ConfigWriteInt(L"IFACE", L"IFACE_BG_COLOUR", 0x0000007F);
     ConfigWriteString(L"IFACE", L"IFACE_BG_COLOUR", L"0x0000007F ;R00 G00 B00 A00");//display as a hexadecimal number in the ini, so as to more intuitively modify colour values.
 
     ConfigWriteInt(L"MAINMENU", L"MAIN_MENU_SIZE", 0);
-    ConfigWriteInt(L"MAINMENU", L"USE_HIRES_IMAGES", 1);
+    ConfigWriteInt(L"MAINMENU", L"USE_HIRES_IMAGES", 0);
     ConfigWriteInt(L"MAINMENU", L"MENU_BG_OFFSET_X", -14);
     ConfigWriteInt(L"MAINMENU", L"MENU_BG_OFFSET_Y", -4);
 
@@ -195,7 +195,7 @@ void ConfigCreate() {
 
     ConfigWriteInt(L"OTHER_SETTINGS", L"CD_CHECK", 0);
     ConfigWriteInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_BACKGROUND", 0);
-    ConfigWriteInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_ART_FIX", 1);
+    ConfigWriteInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_ART_FIX", 0);
     ConfigWriteInt(L"OTHER_SETTINGS", L"SPLASH_SCRN_TIME", 0);
     ConfigWriteInt(L"OTHER_SETTINGS", L"CPU_USAGE_FIX", 0);
 

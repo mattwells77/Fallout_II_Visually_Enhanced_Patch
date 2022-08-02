@@ -633,8 +633,8 @@ void __declspec(naked) h_iface_skill_kill(void) {
 }
 
 
-//_______________________________________________________
-bool LoadAndDrawIfaceBarBackgroundImage(Window_DX* winDx) {
+//__________________________________
+FRMdx* Get_Iface_Background_Image() {
     char path[128];
     char s_region[6] = { 0,0,0,0,0,0 };
 
@@ -668,21 +668,57 @@ bool LoadAndDrawIfaceBarBackgroundImage(Window_DX* winDx) {
     if (!pFrame) {
         delete pfrmDx;
         pfrmDx = nullptr;
-        return false;
+        
     }
+    return pfrmDx;
+}
 
-    //If graphic width is longer than the iface window - draw so that right side of graphic and window align, left side of  graphic will be cut off.
-    winDx->RenderTargetDrawFrame((float)((LONG)IFACE_BAR_WIDTH - (LONG)IFACE_BAR_GRAPHIC_WIDTH), 0, pFrame, nullptr, nullptr);
 
-    //Draw part of the left side of graphic aligned to the left side of window - to create a shorter iMonitor background.
-    if (IFACE_BAR_WIDTH < IFACE_BAR_GRAPHIC_WIDTH) {
-        RECT scissorRect = { 0,0,80,(LONG)winDx->GetHeight() - 1 };
-        winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, &scissorRect);
-    }
+//______________________________________
+DWORD Get_Iface_Background_Image_Width() {
+    FRMdx* pfrmDx = Get_Iface_Background_Image();
+    FRMframeDx* pFrame = nullptr;
+    DWORD width = 0;
+    if (pfrmDx)
+        pFrame = pfrmDx->GetFrame(0, 0);
+    if (pFrame)
+        width =  pFrame->GetWidth();
+
     pFrame = nullptr;
-    delete pfrmDx;
+    if(pfrmDx)
+        delete pfrmDx;
     pfrmDx = nullptr;
 
+    return width;
+}
+
+
+//________________________________________________
+bool Draw_Iface_Background_Image(Window_DX* winDx) {
+
+    FRMdx* pfrmDx = Get_Iface_Background_Image();
+    FRMframeDx* pFrame = nullptr;
+    if (pfrmDx)
+        pFrame = pfrmDx->GetFrame(0, 0);
+
+    if (pFrame) {
+        //If graphic width is longer than the iface window - draw so that right side of graphic and window align, left side of  graphic will be cut off.
+        winDx->RenderTargetDrawFrame((float)((LONG)IFACE_BAR_WIDTH - (LONG)IFACE_BAR_GRAPHIC_WIDTH), 0, pFrame, nullptr, nullptr);
+
+        //Draw part of the left side of graphic aligned to the left side of window - to create a shorter iMonitor background.
+        if (IFACE_BAR_WIDTH < IFACE_BAR_GRAPHIC_WIDTH) {
+            RECT scissorRect = { 0,0,80,(LONG)winDx->GetHeight() - 1 };
+            winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, &scissorRect);
+        }
+    }
+    if (pfrmDx)
+        delete pfrmDx;
+    pfrmDx = nullptr;
+
+    if (!pFrame)
+        return false;
+
+    pFrame = nullptr;
     return true;
 }
 
@@ -898,7 +934,7 @@ void OnScreenResize_Iface(Window_DX* pWin_This) {
         iitemSlotRect->left = 267 + ifaceWin->width - 640;
         iitemSlotRect->right = 455 + ifaceWin->width - 640;
 
-        LoadAndDrawIfaceBarBackgroundImage(ifaceWin->winDx);
+        Draw_Iface_Background_Image(ifaceWin->winDx);
 
         ButtonStruct_DX* button = nullptr;
         //Resize iMonitor
@@ -1160,6 +1196,14 @@ LONG Iface_Setup() {
 
     *p_is_iface_initilizing = TRUE;
 
+    IFACE_BAR_GRAPHIC_WIDTH = ConfigReadInt(L"IFACE", L"IFACE_BAR_WIDTH", 640);
+
+    DWORD bgImage_width = Get_Iface_Background_Image_Width();
+    if (IFACE_BAR_GRAPHIC_WIDTH != bgImage_width) {
+        Fallout_Debug_Error("Iface_Setup - ini IFACE_BAR_GRAPHIC_WIDTH %d doesn't match the loaded image width %d.", IFACE_BAR_GRAPHIC_WIDTH, bgImage_width);
+        IFACE_BAR_GRAPHIC_WIDTH = bgImage_width;
+    }
+    IFACE_BAR_WIDTH = IFACE_BAR_GRAPHIC_WIDTH;
 
     if (SCR_WIDTH < IFACE_BAR_WIDTH)
         IFACE_BAR_WIDTH = SCR_WIDTH;
@@ -1201,7 +1245,7 @@ LONG Iface_Setup() {
 
 
 
-    if (!LoadAndDrawIfaceBarBackgroundImage(pWin->winDx)) {
+    if (!Draw_Iface_Background_Image(pWin->winDx)) {
         Fallout_Debug_Error("Iface_Setup - iface load backGround image failed");
         Iface_Destructor();
         return -1;
@@ -2515,12 +2559,6 @@ void Modifications_Interface_Bar() {
     IFACE_BAR_LOCATION = ConfigReadInt(L"IFACE", L"IFACE_BAR_LOCATION", 0);
     if (IFACE_BAR_LOCATION > 2)
         IFACE_BAR_LOCATION = 0;
-
-    IFACE_BAR_GRAPHIC_WIDTH = ConfigReadInt(L"IFACE", L"IFACE_BAR_WIDTH", 640);
-    if (IFACE_BAR_GRAPHIC_WIDTH < 640)
-        IFACE_BAR_GRAPHIC_WIDTH = 640;
-
-    IFACE_BAR_WIDTH = IFACE_BAR_GRAPHIC_WIDTH;
 
     IFACE_BG_COLOUR = ConfigReadInt(L"IFACE", L"IFACE_BG_COLOUR", 0x000000FF);
 

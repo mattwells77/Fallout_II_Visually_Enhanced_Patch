@@ -2248,40 +2248,37 @@ LONG Dialog_Main() {
     FRMCached* pfrm = nullptr;
     FRMframeDx* pFrame = nullptr;
 
-    FRMdx* altBG_frm = nullptr;
+    
     float yPos_NpcView = 14;
 
-    if (ConfigReadInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_ART_FIX", 1)) {
-        yPos_NpcView += 5;
-        altBG_frm = new FRMdx("HR_ALLTLK", ART_INTRFACE, -1);
+    int is_alternate_dialog_bG = ConfigReadInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_ART_FIX", 1);
+    if (is_alternate_dialog_bG) {
+        FRMdx* altBG_frm = new FRMdx("HR_ALLTLK", ART_INTRFACE, -1);
         pFrame = altBG_frm->GetFrame(0, 0);
+        if (pFrame) {
+            pWin_Dialog->winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, nullptr);
+            yPos_NpcView += 5;
+        }
+        else {
+            Fallout_Debug_Error("Dialog_Main - DIALOG_SCRN_ART_FIX, load HR_ALLTLK backGround image failed.");
+            is_alternate_dialog_bG = 0;
+        }
+        delete altBG_frm;
+        altBG_frm = nullptr;
+        pFrame = nullptr;
     }
-    else {
+
+    if (is_alternate_dialog_bG == 0) {
         frmID = fall_GetFrmID(ART_INTRFACE, 0x67, 0, 0, 0);//alltlk.frm     ; dialog screen background
         pfrm = new FRMCached(frmID);
-        if (!pfrm)
-            return -1;
-        FRMframeDx* pFrame = pfrm->GetFrame(0, 0);
-    }
-
-    if (!pFrame) {
-        if (altBG_frm)
-            delete altBG_frm;
-        altBG_frm = nullptr;
-        if (pfrm)
-            delete pfrm;
-        pfrm = nullptr;
-        return -1;
-    }
-
-    pWin_Dialog->winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, nullptr);
-    if (altBG_frm)
-        delete altBG_frm;
-    altBG_frm = nullptr;
-    if (pfrm)
+        pFrame = pfrm->GetFrame(0, 0);
+        if(pFrame)
+            pWin_Dialog->winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, nullptr);
         delete pfrm;
-    pfrm = nullptr;
-    pFrame = nullptr;
+        pfrm = nullptr;
+        pFrame = nullptr;
+    }
+
 
     //NPC view screen highlights window.
 
