@@ -5,7 +5,7 @@ This is a massive overhaul of my previous patch **The Fallout II High Resolution
 **A work in progress...**
 
 First I have to stress that this patch is not yet complete. It likely contains many bugs and also likely conflicts with some of the modifications made by [sfall](https://github.com/sfall-team/sfall "A set of engine modifications for the classic game Fallout 2 in the form of a DLL, which modifies executable in memory without changing anything in EXE file itself.").
-In it's current state it should be used for testing only. You should also only use it with the current version of [sfall](https://github.com/sfall-team/sfall "A set of engine modifications for the classic game Fallout 2 in the form of a DLL, which modifies executable in memory without changing anything in EXE file itself."), as thats what I'm testing it against and I noticed it caused a crash on start when using an older version.
+In it's current state it should be used for testing only. You should also only use it with the current version of [sfall](https://github.com/sfall-team/sfall "A set of engine modifications for the classic game Fallout 2 in the form of a DLL, which modifies executable in memory without changing anything in EXE file itself."), as that is what I'm testing it against and I noticed it caused a crash on start when using an older version.
 
 **To list some of it's features:**
 - Rendered with DirectX 11( the HRP used DirectX 9)
