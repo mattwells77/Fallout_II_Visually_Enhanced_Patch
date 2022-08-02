@@ -320,7 +320,7 @@ bool GUI_ScaleLevel_Adjust(bool direction) {
     }
 
     
-    WINDOWINFO windowInfo;
+    WINDOWINFO windowInfo {0};
     windowInfo.cbSize = sizeof(WINDOWINFO);
     GetWindowInfo(*phWinMain, &windowInfo);
 
@@ -344,9 +344,16 @@ bool GUI_ScaleLevel_Adjust(bool direction) {
     Set_ViewPort(SCR_WIDTH * scaleLevel_GUI, SCR_HEIGHT * scaleLevel_GUI);
     Display_Release_RenderTargets();
     SetScreenProjectionMatrix_XM(SCR_WIDTH, SCR_HEIGHT);
-    //ReSizeDisplayEx();
+    
     scaleSubUnit = 1.0f / scaleLevel_GUI;
-    ResetZoomLevel();
+    if (scaleLevel_Game < 1)
+        scaleLevel_Game = 1;
+    if (scaleLevel_Game < scaleLevel_GUI)
+        scaleGame_RO = scaleSubUnit * (float)scaleLevel_Game;
+    else
+        scaleGame_RO = (float)scaleLevel_Game - scaleLevel_GUI + 1;
+    ResizeGameWin();
+
     OnScreenResize_Windows(old_SCR_WIDTH, old_SCR_HEIGHT);
     isMapperSizing = isMapperSizing_temp;
 
