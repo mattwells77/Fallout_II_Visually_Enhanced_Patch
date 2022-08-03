@@ -1572,8 +1572,6 @@ bool ScaleWindowToScreen(Window_DX* subwin, LONG scaleType, float* pPoint_W, flo
 
         point_h = (float)bgHeight_scaled / SCR_HEIGHT;
         point_w = (float)bgWidth_scaled / SCR_WIDTH;
-
-        subwin->SetScale(1 / point_w, 1 / point_h);
     }
     else {//if(scaleType == 0) {//original size
         rect_bg_scaled.left = ((LONG)SCR_WIDTH - (LONG)bgWidth) / 2;
@@ -1585,7 +1583,7 @@ bool ScaleWindowToScreen(Window_DX* subwin, LONG scaleType, float* pPoint_W, flo
         rect_bg_scaled.bottom = bgHeight + rect_bg_scaled.top;
         rect_bg_scaled.right = bgWidth + rect_bg_scaled.left;
     }
-
+    subwin->SetScale(1 / point_w, 1 / point_h);
     subwin->SetPosition((float)rect_bg_scaled.left / point_w, (float)rect_bg_scaled.top / point_h);
     if (pRectOnScreen)
         *pRectOnScreen = { (LONG)(rect_bg_scaled.left / point_w), (LONG)(rect_bg_scaled.top / point_h), (LONG)(rect_bg_scaled.right / point_w), (LONG)(rect_bg_scaled.bottom / point_h) };
