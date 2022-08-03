@@ -604,18 +604,11 @@ LONG LoadSave_Setup(LONG type_long) {
         LS_Draw_8bit_Save_Picture();
     
     
-    LONG xPos = (LONG)SCR_WIDTH / 2 - 320;
-
-    LONG scrn_height = Get_GameWin_Height();
     if (type == LS_TYPE::load_from_main)
-            scrn_height = SCR_HEIGHT;
+        *pWinRef_LoadSave = Win_Create_CenteredOnScreen(640, 480, 0x100, FLG_WinExclusive | FLG_WinToFront);
+    else
+        *pWinRef_LoadSave = Win_Create_CenteredOnGame(640, 480, 0x100, FLG_WinExclusive | FLG_WinToFront);
 
-
-    LONG yPos = (scrn_height) / 2 - 240;
-    if (yPos < 0)
-        yPos = 0;
-
-    *pWinRef_LoadSave = fall_Win_Create(xPos, yPos, 640, 480, 0x100, FLG_WinExclusive | FLG_WinToFront);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*pWinRef_LoadSave);
     if (!pWin || !pWin->winDx) {
         LoadSave_Destructor(type);
@@ -625,11 +618,6 @@ LONG LoadSave_Setup(LONG type_long) {
     pWin->winDx->SetDrawFlag(false);
     pWin->winDx->ClearRenderTarget(nullptr);
     
-    if (type == LS_TYPE::load_from_main)
-        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_Screen);
-    else
-        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_GameWin);
-
     DWORD frmID = 0;
     FRMCached* pfrm = nullptr;
     FRMframeDx* pFrame = nullptr;

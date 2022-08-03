@@ -662,6 +662,8 @@ LONG Get_GameWin_Height();
 
 //Creates a fallout window centred on the game window, if the game window exists and is not hidden.
 LONG Win_Create_CenteredOnGame(DWORD width, DWORD height, DWORD colour, DWORD winFlags);
+//Creates a fallout window centred on the screen.
+LONG Win_Create_CenteredOnScreen(DWORD width, DWORD height, DWORD colour, DWORD winFlags);
 
 void Draw_Window_OLD(WinStructDx* p_win, RECT* p_rect, BYTE* toBuff);
 

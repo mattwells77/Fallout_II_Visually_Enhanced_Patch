@@ -1614,32 +1614,6 @@ LONG Get_GameWin_Height() {
 }
 
 
-//_____________________________________________________________________________________
-LONG Win_Create_CenteredOnGame(DWORD width, DWORD height, DWORD colour, DWORD winFlags) {
-    LONG x = 0, y = 0;
-
-    WinStruct* gameWin = fall_Win_Get(*pWinRef_GameArea);
-    if (!gameWin || (gameWin->flags & FLG_WinHidden)) {
-        x = ((LONG)SCR_WIDTH - (LONG)width) / 2;
-        y = (LONG)(SCR_HEIGHT - (LONG)height) / 2;
-    }
-    else {
-        x = ((rcGame_GUI.right - rcGame_GUI.left) - (LONG)width) / 2;
-        y = ((rcGame_GUI.bottom - rcGame_GUI.top) - (LONG)height) / 2;
-    }
-    if (y < 0)
-        y = 0;
-    LONG winRef = fall_Win_Create(x, y, width, height, colour, winFlags);
-
-    WinStructDx* pWin = (WinStructDx*)fall_Win_Get(winRef);
-    if (pWin && pWin->winDx) {
-        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_GameWin);
-    }
-
-    return winRef;
-}
-
-
 //__________________________________________________________
 void OnScreenResize_Centred_On_GameWin(Window_DX* pWin_This) {
     WinStructDx* pWin = (WinStructDx*)pWin_This->Get_FalloutParent();
@@ -1663,6 +1637,31 @@ void OnScreenResize_Centred_On_GameWin(Window_DX* pWin_This) {
 }
 
 
+//_____________________________________________________________________________________
+LONG Win_Create_CenteredOnGame(DWORD width, DWORD height, DWORD colour, DWORD winFlags) {
+    LONG x = 0, y = 0;
+
+    WinStruct* gameWin = fall_Win_Get(*pWinRef_GameArea);
+    if (!gameWin || (gameWin->flags & FLG_WinHidden)) {
+        x = ((LONG)SCR_WIDTH - (LONG)width) / 2;
+        y = (LONG)(SCR_HEIGHT - (LONG)height) / 2;
+    }
+    else {
+        x = ((rcGame_GUI.right - rcGame_GUI.left) - (LONG)width) / 2;
+        y = ((rcGame_GUI.bottom - rcGame_GUI.top) - (LONG)height) / 2;
+    }
+    if (y < 0)
+        y = 0;
+    LONG winRef = fall_Win_Create(x, y, width, height, colour, winFlags);
+
+    WinStructDx* pWin = (WinStructDx*)fall_Win_Get(winRef);
+    if (pWin && pWin->winDx) {
+        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_GameWin);
+    }
+    return winRef;
+}
+
+
 //_________________________________________________________
 void OnScreenResize_Centred_On_Screen(Window_DX* pWin_This) {
     WinStructDx* pWin = (WinStructDx*)pWin_This->Get_FalloutParent();
@@ -1673,6 +1672,22 @@ void OnScreenResize_Centred_On_Screen(Window_DX* pWin_This) {
     LONG winY = ((LONG)SCR_HEIGHT - (pWin->rect.bottom - pWin->rect.top)) / 2;
 
     MoveWindowX(pWin, winX, winY);
+}
+
+
+//_______________________________________________________________________________________
+LONG Win_Create_CenteredOnScreen(DWORD width, DWORD height, DWORD colour, DWORD winFlags) {
+
+    LONG x = ((LONG)SCR_WIDTH - (LONG)width) / 2;
+    LONG y = (LONG)(SCR_HEIGHT - (LONG)height) / 2;
+
+    LONG winRef = fall_Win_Create(x, y, width, height, colour, winFlags);
+
+    WinStructDx* pWin = (WinStructDx*)fall_Win_Get(winRef);
+    if (pWin && pWin->winDx) {
+        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_Screen);
+    }
+    return winRef;
 }
 
 

@@ -2654,7 +2654,7 @@ void __declspec(naked) h_dialog_history_destructor(void) {
 }
 
 
-//________________________________________
+//_______________________________________
 LONG Dialog_History_Setup(LONG* p_winRef) {
     if (*p_is_lips_sound_playing == 1) {
         if (fall_is_sound_playing(*pp_lips_sound_struct))
@@ -2682,8 +2682,11 @@ LONG Dialog_History_Setup(LONG* p_winRef) {
         pfrm = nullptr;
         return -1;
     }
-
-    *p_winRef = Win_Create_CenteredOnGame(pFrame->GetWidth(), pFrame->GetHeight(), 0x100, FLG_WinToFront | FLG_WinExclusive);
+    int DIALOG_SCRN_BACKGROUND = ConfigReadInt(L"OTHER_SETTINGS", L"DIALOG_SCRN_BACKGROUND", 0);
+    if(DIALOG_SCRN_BACKGROUND)
+        *p_winRef = Win_Create_CenteredOnScreen(pFrame->GetWidth(), pFrame->GetHeight(), 0x100, FLG_WinToFront | FLG_WinExclusive);
+    else
+        *p_winRef = Win_Create_CenteredOnGame(pFrame->GetWidth(), pFrame->GetHeight(), 0x100, FLG_WinToFront | FLG_WinExclusive);
 
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef);
     if (!pWin || !pWin->winDx) {
