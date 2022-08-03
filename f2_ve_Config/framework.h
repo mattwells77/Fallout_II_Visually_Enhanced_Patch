@@ -28,7 +28,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <stdarg.h>
 #include <Shellapi.h>
 
 #include <Shlobj.h>
