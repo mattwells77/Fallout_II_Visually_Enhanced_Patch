@@ -213,12 +213,8 @@ LONG Inventory_Setup(LONG type_long) {
             return 0;
         }
 
-        LONG winX = ((LONG)SCR_WIDTH - inv_details[static_cast<LONG>(inv_type)].width) / 2;// +inv_details[inv_type]->x;
-        LONG winY = (Get_GameWin_Height() - inv_details[static_cast<LONG>(inv_type)].height) / 2;// +inv_details[inv_type]->y;//sub 100 to centre above interface bar.
-        if (winY < 0)
-            winY = 0;
+        *pWinRef_Inventory = Win_Create_CenteredOnGame(inv_details[static_cast<LONG>(inv_type)].width, inv_details[static_cast<LONG>(inv_type)].height, 0x101, FLG_WinToFront | FLG_WinExclusive);
 
-        *pWinRef_Inventory = fall_Win_Create(winX, winY, inv_details[static_cast<LONG>(inv_type)].width, inv_details[static_cast<LONG>(inv_type)].height, 0x101, FLG_WinToFront | FLG_WinExclusive);
         pWin = (WinStructDx*)fall_Win_Get(*pWinRef_Inventory);
         if (!pWin || !pWin->winDx) {
             delete pfrm;
@@ -229,9 +225,6 @@ LONG Inventory_Setup(LONG type_long) {
         pWin->winDx->SetBackGroungColour(0x00000000);
         pWin->winDx->SetDrawFlag(false);
         pWin->winDx->ClearRenderTarget(nullptr);
-
-
-        //Window_DX* subwin = new Window_DX(0, 0, pWin->winDx->GetWidth(), pWin->winDx->GetHeight(), 0x00000000, pWin->winDx, nullptr);
         pWin->winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, nullptr);
 
         delete pfrm;
@@ -239,7 +232,6 @@ LONG Inventory_Setup(LONG type_long) {
         pFrame = nullptr;
 
         *ppfall_INV_Display_Text = pfall_INV_Display_Text_IMonitor;
-        pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_GameWin);
     }
 
     invType_current = inv_type;

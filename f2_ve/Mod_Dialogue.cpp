@@ -632,7 +632,7 @@ LONG Dialog_Talk_Setup() {
     if (*p_winRef_Dialog_Base != -1)
         Dialog_Base_Destructor();
 
-    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
+    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - (LONG)winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef_Dialog_Base);
     if (!pWin || !pWin->winDx) {
         delete pfrm;
@@ -796,7 +796,7 @@ LONG Dialog_Barter_Setup() {
     if (*p_winRef_Dialog_Base != -1)
         Dialog_Base_Destructor();
 
-    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
+    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - (LONG)winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef_Dialog_Base);
     if (!pWin || !pWin->winDx) {
         delete pfrm;
@@ -1102,7 +1102,7 @@ LONG Dialog_Control_Setup() {
     if (*p_winRef_Dialog_Base != -1)
         Dialog_Base_Destructor();
 
-    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
+    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - (LONG)winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef_Dialog_Base);
     if (!pWin || !pWin->winDx) {
         delete pfrm;
@@ -1409,7 +1409,7 @@ LONG Dialog_Custom_Setup() {
         Dialog_Custom_Destructor();
 
 
-    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
+    *p_winRef_Dialog_Base = fall_Win_Create(pWin_Dialog->rect.left, pWin_Dialog->rect.bottom + 1 - (LONG)winHeight, pFrame->GetWidth(), winHeight, 0x100, FLG_WinToBack);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef_Dialog_Base);
     if (!pWin || !pWin->winDx) {
         delete pfrm;
@@ -1665,8 +1665,8 @@ LONG Dialog_Custom_Box(LONG disposition) {
 
     DWORD winWidth = pFrame->GetWidth();
     DWORD winHeight = pFrame->GetHeight();
-    LONG winX = pWin_Dialog->rect.left + (pWin_Dialog->width - winWidth) / 2;
-    LONG winY = pWin_Dialog->rect.top + (pWin_Dialog->height - winHeight) / 2;
+    LONG winX = pWin_Dialog->rect.left + ((LONG)pWin_Dialog->width - (LONG)winWidth) / 2;
+    LONG winY = pWin_Dialog->rect.top + ((LONG)pWin_Dialog->height - (LONG)winHeight) / 2;
 
     int winRef_main = fall_Win_Create(winX, winY, winWidth, winHeight, 0x100, FLG_WinToFront | FLG_WinExclusive);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(winRef_main);
@@ -2683,15 +2683,8 @@ LONG Dialog_History_Setup(LONG* p_winRef) {
         return -1;
     }
 
-    DWORD winWidth = pFrame->GetWidth();
-    DWORD winHeight = pFrame->GetHeight();
+    *p_winRef = Win_Create_CenteredOnGame(pFrame->GetWidth(), pFrame->GetHeight(), 0x100, FLG_WinToFront | FLG_WinExclusive);
 
-    LONG winX = ((LONG)SCR_WIDTH - (LONG)winWidth) / 2;
-    LONG winY = (Get_GameWin_Height() - winHeight) / 2;//sub 100 to centre above interface bar.
-    if (winY < 0)
-        winY = 0;
-
-    *p_winRef = fall_Win_Create(winX, winY, winWidth, winHeight, 0x100, FLG_WinToFront | FLG_WinExclusive);
     WinStructDx* pWin = (WinStructDx*)fall_Win_Get(*p_winRef);
     if (!pWin || !pWin->winDx) {
         delete pfrm;
@@ -2702,8 +2695,6 @@ LONG Dialog_History_Setup(LONG* p_winRef) {
     pWin->winDx->SetBackGroungColour(0x00000000);
     pWin->winDx->SetDrawFlag(false);
     pWin->winDx->ClearRenderTarget(nullptr);
-    pWin->winDx->Set_OnScreenResizeFunction(&OnScreenResize_Centred_On_GameWin);
-
     pWin->winDx->RenderTargetDrawFrame(0, 0, pFrame, nullptr, nullptr);
 
     delete pfrm;

@@ -1209,7 +1209,7 @@ LONG Iface_Setup() {
         IFACE_BAR_WIDTH = SCR_WIDTH;
 
     LONG winX = 0;
-    LONG winY = SCR_HEIGHT - IFACE_BAR_HEIGHT;
+    LONG winY = (LONG)SCR_HEIGHT - (LONG)IFACE_BAR_HEIGHT;
 
     if (IFACE_BAR_LOCATION == 0)
         winX = ((LONG)SCR_WIDTH - (LONG)IFACE_BAR_WIDTH) / 2;

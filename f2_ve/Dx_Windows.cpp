@@ -1622,8 +1622,8 @@ LONG Win_Create_CenteredOnGame(DWORD width, DWORD height, DWORD colour, DWORD wi
 
     WinStruct* gameWin = fall_Win_Get(*pWinRef_GameArea);
     if (!gameWin || (gameWin->flags & FLG_WinHidden)) {
-        x = (LONG)(SCR_WIDTH >> 1) - (LONG)(width >> 1);
-        y = (LONG)(SCR_HEIGHT >> 1) - (LONG)(height >> 1);
+        x = ((LONG)SCR_WIDTH - (LONG)width) / 2;
+        y = (LONG)(SCR_HEIGHT - (LONG)height) / 2;
     }
     else {
         x = ((rcGame_GUI.right - rcGame_GUI.left) - (LONG)width) / 2;
