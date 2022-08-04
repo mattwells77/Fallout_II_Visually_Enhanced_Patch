@@ -9,7 +9,7 @@ In it's current state it should be used for testing only. You should also only u
 
 **To list some of it's features:**
 - Rendered with DirectX 11( the HRP used DirectX 9)
-- 32 bit graphics, frm's(fallouts graphic) with different palettes can sit side by side. Support for a 32bit frm has also been added, although there is as yet no program to create these. An 8, 24, 32 bit BMP can be used in place of some of the interface graphics.
+- 32 bit graphics, frm's(fallouts graphic) with different palettes can sit side by side. Support for a 32bit frm has also been added, although there is as yet no program to create these. An 8, 24 or 32 bit BMP can be used in place of some of the interface graphics.
 - The interface can be scaled to better fit your screen.
 - Game and World maps can be scaled independently, zoomed in and out by way of the mouse wheel.
 - A new way to represent lights in-game for a more natural appearance, original lighting is also improved without the palette limitation.
