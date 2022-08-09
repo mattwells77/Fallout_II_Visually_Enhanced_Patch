@@ -65,12 +65,20 @@ public:
         return true;
     };
     void DrawToFrame(BYTE* fBuff, DWORD* fpal, bool is_fBuff_32bit, DWORD fWidth, DWORD fHeight, LONG fX, LONG fY, DWORD subWidth, DWORD subHeight, LONG tX, LONG tY);
-    ID3D11ShaderResourceView* GetBaseTex(bool reduceFauxShadows) {
+    /*ID3D11ShaderResourceView* GetBaseTex(bool reduceFauxShadows) {
         if (pTex_Base_shaderResourceView)
             return pTex_Base_shaderResourceView;
         DrawBaseTex(reduceFauxShadows);
         return pTex_Base_shaderResourceView;
+    };*/
+    ID3D11ShaderResourceView* GetBaseTex(bool create_from_frame) {
+        if (pTex_Base_shaderResourceView)
+        return pTex_Base_shaderResourceView;
+        if (create_from_frame)
+            DrawBaseTex_From_Frame(false);
+        return pTex_Base_shaderResourceView;
     };
+    void DrawBaseTex(BYTE* indexBuff);
     bool Is32bitColour() {
         if (pixelWidth == 4)
             return true;
@@ -134,7 +142,7 @@ private:
     void Draw32(BYTE* fBuff, DWORD fWidth, DWORD fHeight, LONG fX, LONG fY, DWORD subWidth, DWORD subHeight, BYTE* toBuff, LONG tX, LONG tY, DWORD toWidth);
     void DrawPal32(BYTE* fBuff, DWORD* pal, DWORD fWidth, DWORD fHeight, LONG fX, LONG fY, DWORD subWidth, DWORD subHeight, BYTE* toBuff, LONG tX, LONG tY, DWORD toWidth);
     void Draw(BYTE* indexBuff, DWORD* pal);
-    void DrawBaseTex(bool reduceFauxShadows);
+    void DrawBaseTex_From_Frame(bool reduceFauxShadows);
 };
 
 

@@ -334,15 +334,14 @@ UNLSTDfrm* LoadFrmFromID(DWORD frmID, LONG palOffset_Mask) {
     UNLSTDfrm* frm = new UNLSTDfrm;
 
     void* frmStream = fall_fopen(FrmPath, "rb");
-
+    
+    int numOri = 6;
     if (frmStream) {
         if (!LoadFrmHeader(frm, frmStream)) {
             fall_fclose(frmStream);
             delete frm;
             return nullptr;
         }
-
-        int numOri = 6;
         if (frm->oriOffset[0] == frm->oriOffset[1])
             numOri = 1;
         for (int ori = 0; ori < numOri; ori++) {
@@ -366,6 +365,44 @@ UNLSTDfrm* LoadFrmFromID(DWORD frmID, LONG palOffset_Mask) {
 
     char* pExt = strstr(FrmPath, ".fr");
     if (pExt) {
+
+        char ext_ori = *(pExt + 3);//copy the last char from the extension
+        strcpy_s(pExt, 5, ".bas");
+        if(ext_ori!='m')//if extension doesn't end with 'm', than the frm is divided into separate files by orientation. Put this back to find the matching bas file. ".ba#" where # is the ori.
+            *(pExt + 3) = ext_ori;
+        //check if the frm has matching base frames for shadow casting.
+        void* baseStream = fall_fopen(FrmPath, "rb");
+        if (baseStream) {
+            UNLSTDfrm* frm_base = new UNLSTDfrm;
+            if (LoadFrmHeader(frm_base, baseStream)) {
+                if (frm_base && frm_base->numFrames == frm->numFrames) {
+                    int numOri_base = 6;
+                    if (frm_base->oriOffset[0] == frm_base->oriOffset[1]) {
+                        numOri_base = 1;
+                    }
+                    if (numOri_base == numOri) {
+                        for (int ori = 0; ori < numOri; ori++) {
+                            frm->frames_base[ori] = new UNLSTDframe * [frm->numFrames];
+                            for (int fNum = 0; fNum < frm->numFrames; fNum++) {
+                                frm->frames_base[ori][fNum] = new UNLSTDframe;
+                                if (!LoadFrmFrame(frm->frames_base[ori][fNum], baseStream) || frm->frames_base[ori][fNum]->width != frm->frames[ori][fNum]->width || frm->frames_base[ori][fNum]->height != frm->frames[ori][fNum]->height) {
+                                    Fallout_Debug_Error("LoadFrmFromID - Loading the frm bas file frame ori%d num%d %s", ori, fNum, FrmPath);
+                                    delete frm->frames_base[ori][fNum];
+                                    frm->frames_base[ori][fNum] = nullptr;
+                                    fNum = frm->numFrames;
+                                    ori = numOri;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                Fallout_Debug_Error("LoadFrmFromID - Loading the frm bas file header %s", FrmPath);
+            delete frm_base;
+            fall_fclose(baseStream);
+        }
+
         strcpy_s(pExt, 5, ".pal");
         //check if frm has a pal file and load
         void* palStream = fall_fopen(FrmPath, "rb");

@@ -248,10 +248,76 @@ void FRMframeDx::DrawToFrame(BYTE* fBuff, DWORD* fpal, bool is_fBuff_32bit, DWOR
 }
 
 
-//__________________________________________________
+
+
+//___________________________________________
+void FRMframeDx::DrawBaseTex(BYTE* indexBuff) {
+
+    if (indexBuff == nullptr)
+        return;
+    if (pTex_Base != nullptr)
+        return;
+
+    D3D11_TEXTURE2D_DESC textureDesc;
+    HRESULT result;
+    // Initialize the render target texture description.
+    ZeroMemory(&textureDesc, sizeof(textureDesc));
+
+    // Setup the render target texture description.
+    textureDesc.Width = width;
+    textureDesc.Height = height;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    textureDesc.CPUAccessFlags = 0;
+    textureDesc.MiscFlags = 0;
+
+    // Create the render target texture.
+    result = pD3DDev->CreateTexture2D(&textureDesc, nullptr, &pTex_Base);
+    if (FAILED(result))
+        return;
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+    // Setup the description of the shader resource view.
+    shaderResourceViewDesc.Format = textureDesc.Format;
+    shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+    shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+    // Create the shader resource view.
+    result = pD3DDev->CreateShaderResourceView(pTex_Base, &shaderResourceViewDesc, &pTex_Base_shaderResourceView);
+    if (FAILED(result))
+        return;
+
+    DWORD buff_width = width;
+    DWORD buff_height = height;
+    LONG to_Offset = 0;
+
+    //if texture size has been increase by 2 pixels - to allow for shader outline
+    if (tex_widened) {
+        buff_width -= 2;
+        buff_height -= 2;
+        to_Offset = 1;
+    }
+
+    D3D11_BOX destRegion;
+    destRegion.left = to_Offset;
+    destRegion.right = buff_width;
+    destRegion.top = to_Offset;
+    destRegion.bottom = buff_height;
+    destRegion.front = 0;
+    destRegion.back = 1;
+    pD3DDevContext->UpdateSubresource(pTex_Base, 0, &destRegion, indexBuff, buff_width, 0);
+}
+
+
+//_____________________________________________________________
 //create a texture which roughly holds the base "feet" of the frame, used for creating shadows.
 //reduceFauxShadows - effects default pal frms, attemps to exclude the shadow already present at the base of most sprites by ignoring dark pal colours.
-void FRMframeDx::DrawBaseTex(bool reduceFauxShadows) {
+void FRMframeDx::DrawBaseTex_From_Frame(bool reduceFauxShadows) {
 
     if (pD3DDev == nullptr)
         return;
@@ -400,7 +466,6 @@ void FRMframeDx::DrawBaseTex(bool reduceFauxShadows) {
     destRegion.bottom = height;
     destRegion.front = 0;
     destRegion.back = 1;
-    //ID3D11DeviceContext* pd3dDeviceContext = GetD3dDeviceContext();
     pD3DDevContext->UpdateSubresource(pTex_Base, 0, &destRegion, pbaseBuff, width, 0);
 
     delete[] bHeight;
@@ -581,6 +646,7 @@ bool FRMdx::AddFrames(UNLSTDfrm* frm, int fileOri, int ori) {
         return false;
     lpFrame[ori] = new FRMframeDx * [numFrames];
     UNLSTDframe* frame = nullptr;
+    UNLSTDframe* frame_base = nullptr;
 
     bool is32bitColour = false;
     if (frm->version == FRM_VER_32BIT)
@@ -591,6 +657,9 @@ bool FRMdx::AddFrames(UNLSTDfrm* frm, int fileOri, int ori) {
 
     for (WORD n = 0; n < numFrames; n++) {
         frame = frm->frames[fileOri][n];
+        frame_base = nullptr;
+        if(frm->frames_base[fileOri])
+            frame_base = frm->frames_base[fileOri][n];
         if (frame) {
             offset_frm_first_frame_X += frame->x;
             offset_frm_first_frame_Y += frame->y;
@@ -601,11 +670,14 @@ bool FRMdx::AddFrames(UNLSTDfrm* frm, int fileOri, int ori) {
             lpFrame[ori][n]->SetOffsets_FromFirstFrame(offset_frm_first_frame_X, offset_frm_first_frame_Y);
             
             lpFrame[ori][n]->SetOffsets_Centre(frm->xCentreShift[fileOri] - frame->width / 2 + 1 - tex_widened, frm->yCentreShift[fileOri] - frame->height + 1 - tex_widened);
+            if(frame_base)
+                lpFrame[ori][n]->DrawBaseTex(frame_base->buff);
         }
         else
             return false;
     }
     frame = nullptr;
+    frame_base = nullptr;
     return true;
 }
 

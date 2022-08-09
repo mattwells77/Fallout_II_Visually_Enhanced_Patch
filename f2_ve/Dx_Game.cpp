@@ -894,9 +894,9 @@ void DrawObjShadow(OBJStruct* pObj, RECT* pRect, XMMATRIX* pOrtho2D) {
     LONG artType = ((0x0F000000 & fID) >> 24);
     if (!IsArtTypeEnabled(artType))
         return;
-    bool reduceFauxShadows = true;
+    bool force_create_base_from_frame = false;
     if (artType == ART_WALLS)
-        reduceFauxShadows = false;
+        force_create_base_from_frame = true;
 
     LONG xPos = 0;
     LONG yPos = 0;
@@ -952,7 +952,7 @@ void DrawObjShadow(OBJStruct* pObj, RECT* pRect, XMMATRIX* pOrtho2D) {
     pD3DDevContext->PSSetShader(pd3d_PS_Shadow1_DrawBase, nullptr, 0);
 
     //set texture stuff  -draw-
-    ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetBaseTex(reduceFauxShadows);
+    ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetBaseTex(force_create_base_from_frame);
     if (pframe_Tex_shaderResourceView) {
         pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
         pD3DDevContext->DrawIndexed(4, 0, 0);

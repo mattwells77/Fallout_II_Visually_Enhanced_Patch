@@ -62,6 +62,7 @@ public:
     DWORD frameAreaSize;
     DWORD* pPal;
     UNLSTDframe** frames[6];
+    UNLSTDframe** frames_base[6];
     bool uniformly_lit;//true if the frm should be lit uniformly as originally intend. Don't apply the new lighting.
     UNLSTDfrm() {
         version = 0;
@@ -74,6 +75,7 @@ public:
             yCentreShift[i] = 0;
             oriOffset[i] = 0;
             frames[i] = nullptr;
+            frames_base[i] = nullptr;
         }
         frameAreaSize = 0;
         uniformly_lit = false;
@@ -89,6 +91,15 @@ public:
                 delete[] frames[ori];
             }
             frames[ori] = nullptr;
+            if (frames_base[ori] != nullptr) {
+                for (int fNum = 0; fNum < numFrames; fNum++) {
+                    if (frames_base[ori][fNum] != nullptr)
+                        delete frames_base[ori][fNum];
+                    frames_base[ori][fNum] = nullptr;
+                }
+                delete[] frames_base[ori];
+            }
+            frames_base[ori] = nullptr;
         }
         if (pPal != nullptr)
             delete[] pPal;
