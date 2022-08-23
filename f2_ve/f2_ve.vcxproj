@@ -87,7 +87,7 @@
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
     </Link>
     <FxCompile>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
+      <ShaderModel>4.0_level_9_1</ShaderModel>
       <VariableName>p%(Filename)_mem</VariableName>
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
       <EntryPointName>%(Filename)</EntryPointName>
@@ -130,7 +130,7 @@
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
     </Link>
     <FxCompile>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
+      <ShaderModel>4.0_level_9_1</ShaderModel>
       <VariableName>p%(Filename)_mem</VariableName>
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
       <EntryPointName>%(Filename)</EntryPointName>
@@ -169,7 +169,7 @@
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
     </Link>
     <FxCompile>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
+      <ShaderModel>4.0_level_9_1</ShaderModel>
       <VariableName>p%(Filename)_mem</VariableName>
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
       <EntryPointName>%(Filename)</EntryPointName>
@@ -212,7 +212,7 @@
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
     </Link>
     <FxCompile>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
+      <ShaderModel>4.0_level_9_1</ShaderModel>
       <VariableName>p%(Filename)_mem</VariableName>
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
       <EntryPointName>%(Filename)</EntryPointName>
