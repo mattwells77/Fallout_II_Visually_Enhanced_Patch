@@ -59,6 +59,9 @@ bool ResizeGameWin();
 void ReSizeCredits();
 void ResizePauseWin();
 
+//Save the load/save map picture to file.
+void LS_Save_Picture_To_File(const char* p_save_dat_path);
+
 void GetMousePosOnGamePortal(LONG *pXPos, LONG *pYPos);
 void GetMousePosOnGameMap(LONG* pXPos, LONG* pYPos);
 

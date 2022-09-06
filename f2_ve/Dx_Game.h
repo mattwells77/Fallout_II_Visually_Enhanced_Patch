@@ -92,6 +92,108 @@ struct FloatingTextObjDx {
     FRMframeDx* frameDX;
 };
 
+
+//Modified fallout map prototype structures, additional variable light_colour RGBX.
+struct PROTOitemDx {
+    DWORD proID;//0x00
+    DWORD txtID;//0x04
+    DWORD frmID;//0x08
+    DWORD light_radius;//0x0C
+    DWORD light_intensity;//0x10
+    DWORD flags;//0x14
+    DWORD actionFlags;//0x18
+    DWORD scriptID;//0x1C
+    DWORD itemType;//0x20
+    ITEMTYPEdata itemTypeData;//0x24
+    DWORD materialID;//0x6C
+    DWORD size;//0x70
+    DWORD weight;//0x74
+    DWORD cost;//0x78
+    DWORD invFrmID;//0x7C
+    DWORD soundID;//80
+    DWORD light_colour;//0x84
+};
+
+
+struct PROTOcritterDx {
+    DWORD proID;//0x00
+    DWORD txtID;//0x04
+    DWORD frmID;//0x08
+    DWORD light_radius;//0x0C
+    DWORD light_intensity;//0x10
+    DWORD flags;//0x14
+    DWORD actionFlags;//0x18
+    DWORD scriptID;//0x1C
+    DWORD crittFlags;//0x20
+    PRIMEStats primeStats;//0x24
+    SECONDStats secondStats;//0x40
+    PRIMEStats primeStatsBonus;//0xB0
+    SECONDStats secondStatsBonus;//0xCC
+    SKILLS skills;//0x13C
+    DWORD bodyType;//0x184
+    DWORD expVal;//0x188
+    DWORD killType;//0x18C
+    DWORD damageType;//0x190
+    DWORD frmIDHead; //0x194
+    DWORD aiPacket; //0x198
+    DWORD teamNum; //0x19C
+    DWORD light_colour;//0x19D
+};
+
+
+struct PROTOsceneryDx {
+    DWORD proID;//0x00
+    DWORD txtID;//0x04
+    DWORD frmID;//0x08
+    DWORD light_radius;//0x0C
+    DWORD light_intensity;//0x10
+    DWORD flags;//0x14
+    DWORD actionFlags;//0x18
+    DWORD scriptID;//0x1C
+    DWORD sceneryType;//0x20
+    SCENERYTYPEdata sceneryTypeData;//0x24
+    DWORD materialID;//0x2C
+    DWORD unknown; //0x30
+    DWORD soundID;//0x34
+    DWORD light_colour;//0x38
+};
+
+
+struct PROTOwallDx {
+    DWORD proID;//0x00
+    DWORD txtID;//0x04
+    DWORD frmID;//0x08
+    DWORD light_radius;//0x0C
+    DWORD light_intensity;//0x10
+    DWORD flags;//0x14
+    DWORD actionFlags;//0x18
+    DWORD scriptID;//0x1C
+    DWORD materialID;//0x20
+    DWORD light_colour;//0x24
+};
+
+
+struct PROTOtileDx { // same as misc
+    DWORD proID;//0x00
+    DWORD txtID;//0x04
+    DWORD frmID;//0x08
+    DWORD light_radius;//0x0C
+    DWORD light_intensity;//0x10
+    DWORD flags;//0x14
+    DWORD materialID;//0x18  //misc = unknown
+    DWORD light_colour;//0x1C
+};
+
+
+union PROTO_DX {
+    PROTOitemDx item;
+    PROTOcritterDx critter;
+    PROTOsceneryDx scenery;
+    PROTOwallDx wall;
+    PROTOtileDx tile;
+    PROTOtileDx misc;
+};
+
 class FRMobj {
 public:
     float opaqueness;
@@ -189,7 +291,7 @@ private:
 };
 
 
-//Modified fallout map object structure, additional pointer to FRMobj class.
+//Modified fallout map object structure, additional variable light_colour RGBX and pointer to FRMobj class.
 struct OBJStructDx {
     DWORD objID;//0x00 //pc = PF00
     LONG hexNum;//0x04
@@ -200,18 +302,19 @@ struct OBJStructDx {
     DWORD frameNum;//0x18
     LONG ori;//0x1C
     DWORD frmID;//0x20
-    DWORD flags;//0x24 //critter 24240060 //inv 0x000000FF = 1=item1, 2 = item2 4 = armor
+    DWORD flags;//0x24
     LONG level;//0x28
     PUD pud;
-    DWORD proID;//0x64  01
-    DWORD cID;//0x68  05
-    DWORD light_dist;//0x6C 04 //Light strength of this object?   lightRadius
-    DWORD light_intensity;//0x70 0100 //Something to do with radiation?  lightIntensity
-    DWORD combatFlags;//0x74 set to =0   //only valid in combat //read and written but set to 0 on load.
-    DWORD scriptID1;//0x78   50460004  34000004 related to load time  /map scrip ID ?
-    DWORD unknown7C;//0x7C set to =0  //not read but written but set to 0 on load.
+    DWORD proID;//0x64  
+    DWORD cID;//0x68  
+    DWORD light_radius;//0x6C //radius in hexes
+    DWORD light_intensity;//0x70 
+    DWORD combatFlags;//0x74
+    DWORD scriptID1;//0x78  //map script ID 
+    DWORD unknown7C;//0x7C //not read but written but set to 0 on load.
     DWORD scriptID2;//0x80  //objScriptID?
-    FRMobj* frmObjDx;
+    DWORD light_colour; //0x84 RGBX
+    FRMobj* frmObjDx;//0x88
 };
 
 

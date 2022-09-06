@@ -224,10 +224,18 @@ void MapLight(OBJStruct* pObj, LONG subLight) {
 
     if (pObj == *ppObj_PC)
         lightColour = lightColour_PC;
-    else if ((pObj->light_dist & 0xFFFFFF00) != 0) {
-        lightColour.x = (float)((pObj->light_dist & 0xFF000000) >> 24) / 256.0f;
-        lightColour.y = (float)((pObj->light_dist & 0x00FF0000) >> 16) / 256.0f;
-        lightColour.z = (float)((pObj->light_dist & 0x0000FF00) >> 8) / 256.0f;
+    else {
+        DWORD light_colour = (((OBJStructDx*)pObj)->light_colour & 0xFFFFFF00);
+        if (!light_colour) {
+            PROTO* pPro = nullptr;
+            fall_GetPro(pObj->proID, (PROTO**)&pPro);
+            light_colour = VE_PROTO_Get_Light_Colour(pPro);
+        }
+        if (light_colour) {
+            lightColour.x = (float)((light_colour & 0xFF000000) >> 24) / 256.0f;
+            lightColour.y = (float)((light_colour & 0x00FF0000) >> 16) / 256.0f;
+            lightColour.z = (float)((light_colour & 0x0000FF00) >> 8) / 256.0f;
+        }
     }
 
     //We don't want the light colour to affect the intensity to much, so here we make sure at least one colour component is at the max of 1.0f with other components adjusted to maintain ratios.
@@ -277,7 +285,7 @@ void MapLight(OBJStruct* pObj, LONG subLight) {
     xPos += pObj->xShift;
     yPos += pObj->yShift;
 
-    int lightHexDist = pObj->light_dist & 0x000000FF;
+    int lightHexDist = pObj->light_radius;// &0x000000FF;
     int lightDistx = lightHexDist * 32;
     int lightDisty = lightHexDist * 12 + 24;
 
@@ -691,7 +699,7 @@ void FRMobj::DrawObjLights() {
 
     if ((artType == ART_WALLS || artType == ART_SCENERY) && !(((OBJStruct*)*ppObj_PC)->flags & FLG_Disabled) && !(pParentObj->flags & FLG_TransAny)) {
         HexNumToHexPos(pParentObj->hexNum, &xPosWall_iso, &yPosWall_iso);
-        PROTO* pProto = 0;
+        PROTO* pProto = nullptr;
         fall_GetPro(pParentObj->proID, &pProto);
         DWORD actionFlags = pProto->wall.actionFlags;
         if (actionFlags & FLG_EastWest || actionFlags & FLG_EastCorner)
@@ -2784,7 +2792,7 @@ void GameArea_DrawObj(GAME_AREA* pArea, OBJStruct* pObj, RECT* pRect, DWORD draw
 
     if ((artType == ART_WALLS || artType == ART_SCENERY) && !(((OBJStruct*)*ppObj_PC)->flags & FLG_Disabled) && !(pObjDx->flags & FLG_TransAny)) {
         OBJStruct* pObj_PC = *ppObj_PC;
-        PROTO* pProto = 0;
+        PROTO* pProto = nullptr;
         fall_GetPro(pObjDx->proID, &pProto);
         DWORD actionFlags = pProto->wall.actionFlags;
         objData.flags.x = 0;
@@ -4503,12 +4511,12 @@ void __declspec(naked) map_scroller(void) {
     }
 }
 
-
+/*
 //______________________________________________
 void __declspec(naked) obj_light_colour_01(void) {
 
     __asm {
-        mov ecx, dword ptr ds : [eax + 0x6C]//pObj->lightradius
+        mov ecx, dword ptr ds : [eax + 0x6C]//pObj->light_radius
         and ecx, 0x000000FF
         cmp ecx, 0x4
         ret
@@ -4520,8 +4528,8 @@ void __declspec(naked) obj_light_colour_01(void) {
 void __declspec(naked) obj_light_colour_02(void) {
 
     __asm {
-        mov eax, dword ptr ds : [esi + 0x6C]//pObj->lightradius
-        mov edx, dword ptr ds : [edi + 0x6C]//pObj2->lightradius
+        mov eax, dword ptr ds : [esi + 0x6C]//pObj->light_radius
+        mov edx, dword ptr ds : [edi + 0x6C]//pObj2->light_radius
         and eax, 0x000000FF
         and edx, 0x000000FF
         ret
@@ -4533,7 +4541,7 @@ void __declspec(naked) obj_light_colour_02(void) {
 void __declspec(naked) obj_light_colour_03(void) {
     //eax safe to use
     __asm {
-        mov eax, dword ptr ds : [esi + 0x6C]//pObj->lightradius
+        mov eax, dword ptr ds : [esi + 0x6C]//pObj->light_radius
         and eax, 0xFFFFFF00
         mov dword ptr ds : [esi + 0x6C] , eax
         ret
@@ -4545,8 +4553,8 @@ void __declspec(naked) obj_light_colour_03(void) {
 void __declspec(naked) obj_light_colour_04(void) {
     //eax safe to use
     __asm {
-        mov dword ptr ds : [esi + 0x70] , ebx//pObj->lightIntensity
-        mov eax, dword ptr ds : [esi + 0x6C]//pObj->lightradius
+        mov dword ptr ds : [esi + 0x70] , ebx//pObj->light_intensity
+        mov eax, dword ptr ds : [esi + 0x6C]//pObj->light_radius
         and eax, 0xFFFFFF00
         and ebp, 0x000000FF
         or eax, ebp
@@ -4560,7 +4568,7 @@ void __declspec(naked) obj_light_colour_04(void) {
 void __declspec(naked) obj_light_colour_05(void) {
     //edx safe to use
     __asm {
-        mov edx, dword ptr ds : [eax + 0x6C]//pObj->lightradius
+        mov edx, dword ptr ds : [eax + 0x6C]//pObj->light_radius
         and edx, 0x000000FF
         cmp edx, 0x8
         jle endFunc
@@ -4608,7 +4616,7 @@ void __declspec(naked) obj_light_colour_08(void) {
         ret
     }
 }
-
+*/
 
 //_____________________________
 void Modifications_Dx_Game_CH() {
@@ -4682,10 +4690,10 @@ void Modifications_Dx_Game_MULTI() {
     FuncWrite32(0x4826C1, 0x55575651, (DWORD)&map_scroller);
 
     //add extra space in object struct to store pointer to dx obj--------------
-    MemWrite8(0x488F77, 0x84, 0x88);
+    MemWrite8(0x488F77, 0x84, sizeof(OBJStructDx));
     FuncReplace32(0x488F7C, 0x03CB50, (DWORD)&allocate_mem_obj);
-    MemWrite8(0x48D782, 0x84, 0x88);
-    MemWrite8(0x48D792, 0x84, 0x88);
+    MemWrite8(0x48D782, 0x84, sizeof(OBJStructDx));
+    MemWrite8(0x48D792, 0x84, sizeof(OBJStructDx));
 
     //delete obj
     FuncReplace32(0x48DAFA, 0x038126, (DWORD)&delete_obj_dx_ptr);
@@ -4879,7 +4887,9 @@ void Modifications_Dx_Game_MULTI() {
     //0049D617  CALL DRAW_SCENE_IF_CURRENT_LEVEL(EAX *pR>// after move obj
     ///004B0944  CALL DRAW_SCENE_IF_CURRENT_LEVEL(EAX *pR>//floating txt destroy
 
-    //obj light_dist refs
+    /*
+    //Don't need to do this anymore, added a place to store light colour data in OBJStructDx.
+    //obj light_radius refs
     MemWrite16(0x470D74, 0x488B, 0xE890);
     FuncWrite32(0x470D76, 0x4F9836C, (DWORD)&obj_light_colour_01);
 
@@ -4913,30 +4923,48 @@ void Modifications_Dx_Game_MULTI() {
     FuncWrite32(0x48E9C3, 0x000000E0, (DWORD)&obj_light_colour_08);
     MemWrite16(0x48E9C7, 0x768B, 0x9090);
     MemWrite8(0x48E9C9, 0x6C, 0x90);
+    */
+
+    //prototype structure sizes 0-10 only the first 6 (for map objects) are used the others are set to zero.
+    //increase the sizes to store light_colour data. 
+    //0051C340  84 00 00 00 | A0 01 00 00 | 38 00 00 00 | 24 00 00 00 | 1C 00 00 00 | 1C 00 00 00
+    MemWrite32(0x51C340, 0x00000084, sizeof(PROTOitemDx));
+    MemWrite32(0x51C344, 0x000001A0, sizeof(PROTOcritterDx));
+    MemWrite32(0x51C348, 0x00000038, sizeof(PROTOsceneryDx));
+    MemWrite32(0x51C34C, 0x00000024, sizeof(PROTOwallDx));
+    MemWrite32(0x51C350, 0x0000001C, sizeof(PROTOtileDx));
+    MemWrite32(0x51C354, 0x0000001C, sizeof(PROTOtileDx));
+
+
 
     //protos
     //create pros mapper
-    //0049EB7A  |> \C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //item
-    //0049EDD1  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //critter
-    //0049FC12  |> \C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //scenery
-    //0049FD75  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //wall
-    //0049FDEF  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //tile
-    //0049FE67  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->lightRadius //misc
+    //0049EB7A  |> \C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //item
+    //0049EDD1  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //critter
+    //0049FC12  |> \C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //scenery
+    //0049FD75  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //wall
+    //0049FDEF  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //tile
+    //0049FE67  |.  C746 0C 00000 MOV DWORD PTR DS:[ESI+0C],0                                  ; pro->light_radius //misc
 
     //read
-    //004A0FF8  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case item,    case 0 of switch fallout2.4A0FE7
-    //004A10FB  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case critter, case 1 of switch fallout2.4A0FE7
-    //004A11A6  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case scenery, case 2 of switch fallout2.4A0FE7
-    //004A1256  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case walls,   case 3 of switch fallout2.4A0FE7
-    //004A12CD  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case tiles,   case 4 of switch fallout2.4A0FE7
-    //004A1326  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.lightRadius  case misc,    case 5 of switch fallout2.4A0FE7
+    //004A0FF8  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case item,    case 0 of switch fallout2.4A0FE7
+    //004A10FB  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case critter, case 1 of switch fallout2.4A0FE7
+    //004A11A6  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case scenery, case 2 of switch fallout2.4A0FE7
+    //004A1256  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case walls,   case 3 of switch fallout2.4A0FE7
+    //004A12CD  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case tiles,   case 4 of switch fallout2.4A0FE7
+    //004A1326  |> \8D51 0C       LEA EDX,[ECX+0C]                                             ; pro.light_radius  case misc,    case 5 of switch fallout2.4A0FE7
     //write
-    //004A180A  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case item
-    //004A18F7  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case critters
-    //004A199C  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case sceney
-    //004A1A3B  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case walls
-    //004A1AA2  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case tiles
-    //004A1AE7  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->lightRadius  case misc
+    //004A180A  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case item
+    //004A18F7  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case critters
+    //004A199C  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case sceney
+    //004A1A3B  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case walls
+    //004A1AA2  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case tiles
+    //004A1AE7  |.  8B51 0C       MOV EDX,DWORD PTR DS:[ECX+0C]                                ; pro->light_radius  case misc
+
+
+
+
+
 
     //pfall_load_map_data = (void*)FixAddress(0x482B74);
 

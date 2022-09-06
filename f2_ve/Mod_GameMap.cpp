@@ -930,39 +930,54 @@ void __declspec(naked) get_hex_dist(void) {
 }
 
 
-
-
-//____________________________________________________________________________
-void __declspec(naked) fog_of_war_move_to_slot(char *pFromPath, char *pToPath) {
-
-   __asm {
-      push eax
-
-      push ebx
-      push esi
-      push edi
-      push ebp
-
-      push dword ptr ss:[esp+0x1C] //pToPath
-      push dword ptr ss:[esp+0x1C] //pFromPath
-      call FogOfWarMap_CopyFiles
-      add esp, 0x08
-
-      pop ebp
-      pop edi
-      pop esi
-      pop ebx
-
-      pop eax
-      cmp eax, -1
-      ret 0x8
-   }
-
+//________________________________________________________________________________
+LONG Proto_File_Close_For_Reading(void* FileStream, const char* path, PROTO* pPro) {
+    VE_PROTO_LightColour_Read(path, pPro);
+    return fall_fclose(FileStream);
 }
 
 
-//______________________________________________________________________________
-void __declspec(naked) fog_of_war_move_from_slot(char *pFromPath, char *pToPath) {
+//_______________________________________________________
+void __declspec(naked) proto_file_close_for_reading(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        lea ebx, dword ptr ds: [esp+0x1C]//prototype file path
+        mov ecx, dword ptr ds : [esp + 0x108 + 0x1C]//PROTO**
+        mov ecx, dword ptr ds : [ecx]//PROTO*
+        push ecx
+        push ebx
+        push eax//FileStream
+        call Proto_File_Close_For_Reading//fall_fclose
+        add esp, 0xC
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
+}
+
+
+//___________________________________________________________________
+void Game_Data_Files_Copy(const char* pFromPath, const char* pToPath) {
+
+    FogOfWarMap_CopyFiles(pFromPath, pToPath);
+    VE_MAP_CopyFiles(pFromPath, pToPath);
+}
+
+
+//_______________________________________________
+void __declspec(naked) game_data_files_copy(void) {
 
    __asm {
       push eax
@@ -974,7 +989,7 @@ void __declspec(naked) fog_of_war_move_from_slot(char *pFromPath, char *pToPath)
 
       push dword ptr ss:[esp+0x1C] //pToPath
       push dword ptr ss:[esp+0x1C] //pFromPath
-      call FogOfWarMap_CopyFiles
+      call Game_Data_Files_Copy
       add esp, 0x08
 
       pop ebp
@@ -986,120 +1001,363 @@ void __declspec(naked) fog_of_war_move_from_slot(char *pFromPath, char *pToPath)
       cmp eax, -1
       ret 0x8
    }
+}
 
+
+//____________________________________________________________
+LONG Game_Data_Files_Delete(const char* path, const char* ext) {
+
+    FogOfWarMap_DeleteTmps(path);
+    VE_MAP_DeleteTmps(path);
+    return fall_Files_Delete(path, ext);
 }
 
 
 //_________________________________________________
-void __declspec(naked) fog_of_war_delete_tmps(void) {
+void __declspec(naked) game_data_files_delete(void) {
 
-   __asm {
-      push ebx
-      push ecx
-      push esi
+    __asm {
+        push ebx
+        push ecx
+        push esi
 
-      push eax//store map path
+        push edx// extension
+        push eax//maps\(mapName).ext
+        call Game_Data_Files_Delete
+        add esp, 0x8
 
-      push edx// extension
-      push eax//maps\(mapName).ext
-      call fall_Files_Delete
-      add esp, 0x8
+        pop esi
+        pop ecx
+        pop ebx
+        ret
+    }
+}
 
-      pop ebx//restore map path to ebx
 
-      push eax//store return val for fall_Files_Delete
+//_________________________________________________________________
+void* Mapfile_Open_for_Writing(const char* path, const char* flags) {
 
-      push ebx//mapName (+ extension)
-      call FogOfWarMap_DeleteTmps
-      add esp, 0x4
+    void* FileStream_MAP = fall_fopen(path, flags);
 
-      pop eax//restore return val for fall_Files_Delete
+    VE_MAP_Open_WRITE(path, FileStream_MAP);
+    FogOfWarMap_Save(path);
 
-      pop esi
-      pop ecx
-      pop ebx
-      ret
-   }
+    return FileStream_MAP;
+}
+
+
+//___________________________________________________
+void __declspec(naked) mapfile_open_for_writing(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push edx// "wb"
+        push eax//maps\(mapName).ext
+        call Mapfile_Open_for_Writing
+        add esp, 0x8
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
+}
+
+
+//__________________________________________________
+LONG Mapfile_Close_For_Writing(void* FileStream_MAP) {
+    VE_MAP_Close_WRITE();
+    return fall_fclose(FileStream_MAP);
+}
+
+
+//____________________________________________________
+void __declspec(naked) mapfile_close_for_writing(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push eax//FileStream
+        call Mapfile_Close_For_Writing
+        add esp, 0x4
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
+}
+
+
+//_________________________________________________________________
+void* Mapfile_Open_For_Reading(const char* path, const char* flags) {
+
+    void* FileStream_MAP = fall_fopen(path, flags);
+
+    VE_MAP_Open_READ(path, FileStream_MAP);
+
+    return FileStream_MAP;
+}
+
+
+//___________________________________________________
+void __declspec(naked) mapfile_open_for_reading(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push edx// "rb"
+        push eax//maps\(mapName).ext
+        call Mapfile_Open_For_Reading
+        add esp, 0x8
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
 
 }
 
 
-//__________________________________________
-void __declspec(naked) fog_of_war_save(void) {
+//____________________________________________________________________
+LONG Mapfile_Close_For_Reading(void* FileStream_MAP, const char* path) {
 
-   __asm {
-      push ebx
-      push ecx
-      push edx
-      push esi
-      push edi
-      push ebp
+    VE_MAP_Close_READ();
+    FogOfWarMap_Load(path);
 
-      push eax//store map path
+    return fall_fclose(FileStream_MAP);
+}
 
-      push edx// "rb"
-      push eax//maps\(mapName).ext
-      call fall_fopen
-      add esp, 0x8
 
-      pop ebx//restore map path to ebx
+//____________________________________________________
+void __declspec(naked) mapfile_close_for_reading(void) {
 
-      cmp eax, 0
-    je endFunc
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
 
-      push eax//store return val for fall_fopen
+        push ebx//mapName (+ extension)
+        push eax//FileStream
+        call Mapfile_Close_For_Reading
+        add esp, 0x8
 
-      push ebx//mapName (+ extension)
-      call FogOfWarMap_Save
-      add esp, 0x4
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
+}
 
-      pop eax//restore return val for fall_fopen
 
-    endFunc:
-      pop ebp
-      pop edi
-      pop esi
-      pop edx
-      pop ecx
-      pop ebx
-      ret
-   }
+//__________________________________________________________________
+void* SAVE_DAT_Open_For_Writing(const char* path, const char* flags) {
+
+    void* FileStream = fall_fopen(path, flags);
+
+    VE_SAVE_DAT_Open_WRITE(path, FileStream);
+    LS_Save_Picture_To_File(path);
+
+    return FileStream;
+}
+
+
+//____________________________________________________
+void __declspec(naked) save_dat_open_for_writing(void) {
+
+    __asm {
+
+
+        push ebx
+        push ecx
+        push esi
+        push edi
+        push ebp
+
+        push edx// flags
+        push eax//save.dat path
+        call SAVE_DAT_Open_For_Writing
+        add esp, 0x8
+
+        pop ebp
+        pop edi
+        pop esi
+        pop ecx
+        pop ebx
+        ret
+    }
+}
+
+
+//__________________________________________________________________
+void* SAVE_DAT_Open_For_Reading(const char* path, const char* flags) {
+
+    void* FileStream = fall_fopen(path, flags);
+
+    VE_SAVE_DAT_Open_READ(path, FileStream);
+
+    return FileStream;
+}
+
+
+//____________________________________________________
+void __declspec(naked) save_dat_open_for_reading(void) {
+
+    __asm {
+
+
+        push ebx
+        push ecx
+        push esi
+        push edi
+        push ebp
+
+        push edx// flags
+        push eax//save.dat path
+        call SAVE_DAT_Open_For_Reading
+        add esp, 0x8
+
+        pop ebp
+        pop edi
+        pop esi
+        pop ecx
+        pop ebx
+        ret
+    }
 
 }
 
 
-//__________________________________________
-void __declspec(naked) fog_of_war_load(void) {
+//_________________________________________
+void __declspec(naked) save_dat_close(void) {
 
-   __asm {
-      push ebx
-      push ecx
-      push edx
-      push esi
-      push edi
-      push ebp
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
 
-      push eax//FileStream
-      call fall_fclose
-      add esp, 0x4
+        push eax//FileStream
+        call VE_SAVE_DAT_Close
+        add esp, 0x4
 
-      push eax//store return val for fall_fclose
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
 
-      push ebx//mapName (+ extension)
-      call FogOfWarMap_Load
-      add esp, 0x4
+}
 
-      pop eax//restore return val for fall_fclose
 
-      pop ebp
-      pop edi
-      pop esi
-      pop edx
-      pop ecx
-      pop ebx
-      ret
-   }
+//___________________________________________________________________________________________
+LONG Object_Light_Colour_And_Radius_WRITE(void* FileStream, DWORD lightData, OBJStruct* pObj) {
 
+    LightColour_Write(FileStream, pObj);
+    //write light_radius from object structure.
+    return fall_fwrite32_BE(FileStream, lightData);
+}
+
+
+//_______________________________________________________________
+void __declspec(naked) object_light_colour_and_radius_write(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push ecx//pObj
+        push edx//dword
+        push eax//FileStream
+        call Object_Light_Colour_And_Radius_WRITE//fall_fwrite32_BE
+        add esp, 0xC
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
+}
+
+
+//_____________________________________________________________________________________________
+LONG Object_Light_Colour_And_Radius_READ(void* FileStream, DWORD* p_lightData, OBJStruct* pObj) {
+
+    LightColour_Read(FileStream, pObj);
+    //read light radius into object structure.
+    return fall_fread32_BE(FileStream, p_lightData);
+}
+
+
+//______________________________________________________________
+void __declspec(naked) object_light_colour_and_radius_read(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push esi//pObj
+        push edx//p_dword
+        push eax//FileStream
+        call Object_Light_Colour_And_Radius_READ
+        add esp, 0xC
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+    }
 }
 
 
@@ -1452,28 +1710,28 @@ void Modifications_Game_Map_CH() {
     //To-Do Fog of War chinese
     /*
     ///done///00482D40  |.  E8 47220400   CALL 004C4F8C                            ; [Fallout2.004C4F8C, fileStream* f_open_file(EAX *FileName, EDX *flags)
-    FuncReplace32(0x482D41, 0x042247, (DWORD)&fog_of_war_save);
+    FuncReplace32(0x482D41, 0x042247, (DWORD)&mapfile_open_for_saving);
 
     ///done///0047AE35  |.  E8 7A460000   CALL 0047F4B4                            ; [Fallout2.0047F4B4, int delete_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47AE36, 0x467A, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47AE36, 0x467A, (DWORD)&game_data_files_delete);
     ///done///0047AE67  |.  E8 48460000   CALL 0047F4B4                            ; [Fallout2.0047F4B4, int delete_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47AE68, 0x4648, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47AE68, 0x4648, (DWORD)&game_data_files_delete);
     ///done///0047EB35  |.  E8 7A090000   CALL 0047F4B4                            ; [Fallout2.0047F4B4, int delete_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47EB36, 0x097A, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47EB36, 0x097A, (DWORD)&game_data_files_delete);
     ///done///0047EF27  |.  E8 88050000   CALL 0047F4B4                            ; [Fallout2.0047F4B4, int delete_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47EF28, 0x0588, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47EF28, 0x0588, (DWORD)&game_data_files_delete);
     ///done///0047F4A5  |.  E8 0A000000   CALL 0047F4B4                            ; [Fallout2.0047F4B4, int delete_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47F4A6, 0x0A, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47F4A6, 0x0A, (DWORD)&game_data_files_delete);
 
     ///done///0047ECA9  |.  83C4 08       |ADD ESP,8
     ///0047ECAC  |.  83F8 FF       |CMP EAX,-1
     MemWrite16(0x47ECA9, 0xC483, 0xE890);
-    FuncWrite32(0x47ECAB, 0xFFF88308, (DWORD)&fog_of_war_move_to_slot);
+    FuncWrite32(0x47ECAB, 0xFFF88308, (DWORD)&game_data_files_copy);
 
     ///done///0047F10C  |.  83C4 08       |ADD ESP,8
     ///0047F10F  |.  83F8 FF       |CMP EAX,-1
     MemWrite16(0x47F10C, 0xC483, 0xE890);
-    FuncWrite32(0x47F10E, 0xFFF88308, (DWORD)&fog_of_war_move_from_slot);
+    FuncWrite32(0x47F10E, 0xFFF88308, (DWORD)&game_data_files_copy);
     */
     ///done///00481F25  |.  E8 1F300400   CALL 004C4F49                            ; [Fallout2.004C4F49, f_close_file(EAX *FileStrea )
     //FuncReplace32(0x481F26, 0x04301F, (DWORD)&fog_of_war_load);
@@ -1656,37 +1914,52 @@ void Modifications_Game_Map_MULTI() {
 
     FuncReplace32(0x4B2BF8, 0xFFF6708C, (DWORD)&check_angled_roof_tile_edge2);
 
-    //To-Do Fog of War
 
-    //00483910  |.  E8 B3250400   CALL 004C5EC8                            ; FileStream* f_open_file(EAX *FileName, EDX *flags)
-    FuncReplace32(0x483911, 0x0425B3, (DWORD)&fog_of_war_save);
+    //Reading/Writing light colour and radius for maps and pc in save.dat.
+    FuncReplace32(0x4892FE, 0x0003CF12, (DWORD)&object_light_colour_and_radius_write);
+    FuncReplace32(0x488BF2, 0x0003D556, (DWORD)&object_light_colour_and_radius_read);
 
+    //fog of war data is saved here.
+    FuncReplace32(0x483911, 0x000425B3, (DWORD)&mapfile_open_for_writing);
+    FuncReplace32(0x483925, 0x0004258B, (DWORD)&mapfile_close_for_writing);
+ 
+    FuncReplace32(0x482AE2, 0x000433E2, (DWORD)&mapfile_open_for_reading);
+    //fog of war data is loaded here.
+    FuncReplace32(0x482AF6, 0x000433BA, (DWORD)&mapfile_close_for_reading);
+ 
+    FuncReplace32(0x47B980, 0x0004A544, (DWORD)&save_dat_open_for_reading);
+    FuncReplace32(0x47DD13, 0x000481B1, (DWORD)&save_dat_open_for_reading);
+    FuncReplace32(0x47DA15, 0x000484AF, (DWORD)&save_dat_open_for_writing);
 
-    //0047B835  |.  E8 06480000   CALL 00480040                                        ; [fallout2.00480040, int move_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47B836, 0x4806, (DWORD)&fog_of_war_delete_tmps);
-    //0047B867  |.  E8 D4470000   CALL 00480040                                        ; [fallout2.00480040, int move_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47B868, 0x47D4, (DWORD)&fog_of_war_delete_tmps);
-    //0047F6C1  |.  E8 7A090000   CALL 00480040                                        ; [fallout2.00480040, int move_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47F6C2, 0x097A, (DWORD)&fog_of_war_delete_tmps);
-    //0047FAB3  |.  E8 88050000   CALL 00480040                                        ; [fallout2.00480040, int move_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x47FAB4, 0x0588, (DWORD)&fog_of_war_delete_tmps);
-    //00480031  |.  E8 0A000000   CALL 00480040                                        ; [fallout2.00480040, int move_save_files(EAX *pPath, EDX *pExt)
-    FuncReplace32(0x480032, 0x0A, (DWORD)&fog_of_war_delete_tmps);
+    FuncReplace32(0x47B9A0, 0x0004A510, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DAB6, 0x000483FA, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DB4F, 0x00048361, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DBE5, 0x000482CB, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DD67, 0x00048149, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DDEF, 0x000480C1, (DWORD)&save_dat_close);
+    FuncReplace32(0x47DE50, 0x00048060, (DWORD)&save_dat_close);
+    //FuncReplace32(0x47E61B, 0x000478A9, (DWORD)&save_dat_open_for_reading);
+    //FuncReplace32(0x47E6A0, 0x00047810, (DWORD)&save_dat_close);
 
+    //delete game data, ve and fog data.
+    FuncReplace32(0x47B836, 0x00004806, (DWORD)&game_data_files_delete);
+    FuncReplace32(0x47B868, 0x000047D4, (DWORD)&game_data_files_delete);
+    FuncReplace32(0x47F6C2, 0x0000097A, (DWORD)&game_data_files_delete);
+    FuncReplace32(0x47FAB4, 0x00000588, (DWORD)&game_data_files_delete);
+    FuncReplace32(0x480032, 0x0000000A, (DWORD)&game_data_files_delete);
 
-
+    //Saving game data, copy ve/fog files from maps folder to save slot.
     MemWrite16(0x47F835, 0xC483, 0xE890);
-    FuncWrite32(0x47F837, 0xFFF88308, (DWORD)&fog_of_war_move_to_slot);
+    FuncWrite32(0x47F837, 0xFFF88308, (DWORD)&game_data_files_copy);
 
-    //0047F603  |> \68 80A45000   PUSH OFFSET 0050A480                                 ; ASCII "SAV"
-    //MemWrite32(0x47F604, 0x50A480, (DWORD)extension);
-
+    //Loading game data, copy ve/fog files from save slot to maps folder.
     MemWrite16(0x47FC98, 0xC483, 0xE890);
-    FuncWrite32(0x47FC9A, 0xFFF88308, (DWORD)&fog_of_war_move_from_slot);
+    FuncWrite32(0x47FC9A, 0xFFF88308, (DWORD)&game_data_files_copy);
 
-    //00482AF5  |.  E8 BA330400   CALL 004C5EB4                                   ; [fallout2.004C5EB4, f_close_file(EAX *FileStream)
-    FuncReplace32(0x482AF6, 0x0433BA, (DWORD)&fog_of_war_load);
+    //read prototype light colour when closing .pro/sav file after loading prototype data.
+    FuncReplace32(0x4A1D81, 0x0002412F, (DWORD)&proto_file_close_for_reading);
 
+    //To-Do Fog of War
 
     //block fallout method for marking objects as visible. //fallout2.0048C7A0(guessed void)  MARK_VISIBLE_OBJS() within 400 pix from PC
     if (FOG_OF_WAR)

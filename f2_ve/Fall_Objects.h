@@ -124,11 +124,11 @@ struct ITEMTYPEdata {
 
 
 struct PROTOitem {
-	DWORD objID;//0x00
+	DWORD proID;//0x00
 	DWORD txtID;//0x04
 	DWORD frmID;//0x08
-	DWORD lightRadius;//0x0C
-	DWORD lightIntensity;//0x10
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
 	DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
@@ -144,11 +144,11 @@ struct PROTOitem {
 
 
 struct PROTOcritter {
-	DWORD objID;//0x00
+	DWORD proID;//0x00
 	DWORD txtID;//0x04
 	DWORD frmID;//0x08
-	DWORD lightRadius;//0x0C
-	DWORD lightIntensity;//0x10
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
 	DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
@@ -175,11 +175,11 @@ struct SCENERYTYPEdata {
 
 
 struct PROTOscenery {
-	DWORD objID;//0x00
+	DWORD proID;//0x00
 	DWORD txtID;//0x04
 	DWORD frmID;//0x08
-	DWORD lightRadius;//0x0C
-	DWORD lightIntensity;//0x10
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
 	DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
@@ -192,11 +192,11 @@ struct PROTOscenery {
 
 
 struct PROTOwall {
-	DWORD objID;//0x00
+	DWORD proID;//0x00
 	DWORD txtID;//0x04
 	DWORD frmID;//0x08
-	DWORD lightRadius;//0x0C
-	DWORD lightIntensity;//0x10
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
 	DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
@@ -205,11 +205,11 @@ struct PROTOwall {
 
 
 struct PROTOtile { // same as misc
-	DWORD objID;//0x00
+	DWORD proID;//0x00
 	DWORD txtID;//0x04
 	DWORD frmID;//0x08
-	DWORD lightRadius;//0x0C
-	DWORD lightIntensity;//0x10
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
 	DWORD flags;//0x14
 	DWORD materialID;//0x18  //misc = unknown
 };
@@ -334,17 +334,17 @@ struct OBJStruct {
 	  DWORD frameNum;//0x18
 	  LONG ori;//0x1C
 	  DWORD frmID;//0x20
-	  DWORD flags;//0x24 //critter 24240060 //inv 0x000000FF = 1=item1, 2 = item2 4 = armor
+	  DWORD flags;//0x24
 	  LONG level;//0x28
 	  PUD pud;
-	  DWORD proID;//0x64  01
-	  DWORD cID;//0x68  05
-	  DWORD light_dist;//0x6C 04 //lightRadius num hexes
-	  LONG light_intensity;//0x70 0100 //0-65536, 0-100%
-	  DWORD combatFlags;//0x74 set to =0   //only valid in combat //read and written but set to 0 on load.
-	  DWORD scriptID1;//0x78   
-	  DWORD unknown7C;//0x7C set to =0  //not read but written but set to 0 on load.
-	  DWORD scriptIndex;//0x80 
+	  DWORD proID;//0x64
+	  DWORD cID;//0x68
+	  DWORD light_radius;//0x6C //radius in hexes
+	  LONG light_intensity;//0x70
+	  DWORD combatFlags;//0x74
+	  DWORD scriptID1;//0x78
+	  DWORD unknown7C;//0x7C //not read but written but set to 0 on load.
+	  DWORD scriptIndex;//0x80
 };
 
 

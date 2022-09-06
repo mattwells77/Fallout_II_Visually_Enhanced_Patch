@@ -160,3 +160,22 @@ bool FogOfWarMap_Load(const char *MapName);
 //LONG GetFloorHexLight(LONG elev, LONG hexNum, LONG globalLight);
 LONG Get_Hex_FogLevel(LONG elev, LONG hexNum);
 bool Is_Hex_Fogged(LONG elev, LONG hexNum);
+
+bool VE_MAP_CopyFiles(const char* pFromPath, const char* pToPath);
+LONG VE_MAP_DeleteTmps(const char* path);
+
+bool VE_MAP_Open_WRITE(const char* path, void* FileStream_MAP);
+void VE_MAP_Close_WRITE();
+bool VE_MAP_Open_READ(const char* path, void* FileStream_MAP);
+void VE_MAP_Close_READ();
+
+bool VE_SAVE_DAT_Open_WRITE(const char* path, void* FileStream);
+bool VE_SAVE_DAT_Open_READ(const char* path, void* FileStream);
+LONG VE_SAVE_DAT_Close(void* FileStream);
+
+bool LightColour_Read(void* FileStream, OBJStruct* pObj);
+bool LightColour_Write(void* FileStream,  OBJStruct* pObj);
+
+
+bool VE_PROTO_LightColour_Read(const char* path, PROTO* pPro);
+DWORD VE_PROTO_Get_Light_Colour(PROTO* pProDx);

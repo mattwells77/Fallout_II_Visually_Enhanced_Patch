@@ -38,6 +38,35 @@ bool isRecordingObjFog = false;//needed to prevent obj discovery before true pcO
 RECT* p_rc_Fog = nullptr;
 
 
+static char fog_data_header_text[]{ "FOGOFWAR" };
+#define fog_data_version 1
+
+
+void* FileStream_MAP_SAVE_VE = nullptr;//currently reading mapname.ves file stream, holds colours for map objects.
+void* FileStream_MAP_LOAD_VE = nullptr;//currently writing mapname.ves file stream, holds colours for map objects.
+void* FileStream_SAVE_DAT_VE = nullptr;//save.ves file stream, holds colour values fot pc and pc's inv objects.
+
+void* FileStream_MAP_SAVE = nullptr;//currently reading mapname.sav file stream.
+void* FileStream_MAP_LOAD = nullptr;//currently writing mapname.sav file stream.
+
+void* FileStream_SAVE_DAT = nullptr;//save.dat file stream.
+
+static char ve_map_file_header_text[]{ "VE_MAP__" };
+#define ve_map_file_version 1
+
+LONG ve_file_position_num_objects_map = 0;
+LONG ve_file_position_num_objects_save_dat = 0;
+
+LONG ve_num_objects_total_map_read = 0;
+LONG ve_num_objects_total_map_write = 0;
+LONG ve_num_objects_total_save_dat = 0;
+
+LONG ve_num_objects_read_map = 0;
+LONG ve_num_objects_read_save_dat = 0;
+
+static char ve_pro_file_header_text[]{ "VE_PROTO" };
+#define ve_pro_file_version 1
+
 
 
 /*
@@ -1347,59 +1376,561 @@ LONG GetHexLight(LONG level, LONG hexNum, LONG ambientLight) {
 //}
 
 
+//__________________________________________
+DWORD VE_PROTO_Get_Light_Colour(PROTO* pPro) {
+    PROTO_DX* pProDx = (PROTO_DX*)pPro;
+    if (!pProDx)
+        return 0;
+    DWORD light_colour = 0;
+    int type = pProDx->item.proID >> 24;
+    switch (type) {
+    case ART_ITEMS:
+        light_colour = pProDx->item.light_colour;
+        break;
+    case ART_CRITTERS:
+        light_colour = pProDx->critter.light_colour;
+        break;
+    case ART_SCENERY:
+        light_colour = pProDx->scenery.light_colour;
+        break;
+    case ART_WALLS:
+        light_colour = pProDx->wall.light_colour;
+        break;
+    case ART_TILES:
+        light_colour = pProDx->tile.light_colour;
+        break;
+    case ART_MISC:
+        light_colour = pProDx->misc.light_colour;
+        break;
+    default:
+        break;
+    }
+    return light_colour;
+}
+
+
+//___________________________________________________________
+bool VE_PROTO_LightColour_Read(const char* path, PROTO* pPro) {
+    if (!pPro)
+        return false;
+
+    PROTO_DX* pProDx = (PROTO_DX*)pPro;
+    DWORD* pColour = nullptr;
+    int type = pProDx->item.proID >> 24;
+    switch (type) {
+    case ART_ITEMS:
+        pColour = &pProDx->item.light_colour;
+        break;
+    case ART_CRITTERS:
+        pColour = &pProDx->critter.light_colour;
+        break;
+    case ART_SCENERY:
+        pColour = &pProDx->scenery.light_colour;
+        break;
+    case ART_WALLS:
+        pColour = &pProDx->wall.light_colour;
+        break;
+    case ART_TILES:
+        pColour = &pProDx->tile.light_colour;
+        break;
+    case ART_MISC:
+        pColour = &pProDx->misc.light_colour;
+        break;
+    default:
+        break;
+    }
+
+    //set the proto light colour to zero(no colour).
+    if (pColour)
+        *pColour = 0;
+
+    char path_vep[MAX_PATH];
+
+    sprintf_s(path_vep, MAX_PATH, "%s", path);
+    char* p_ext = strrchr(path_vep, '.');
+    if (!p_ext)
+        return false;
+    strcpy_s(p_ext, 5, ".vep");
+
+    void* FileStream = fall_fopen(path_vep, "rb");
+    if (!FileStream) {
+        //Fallout_Debug_Info("Proto_File_Close_For_Reading failed to open:%s", path);
+        return false;
+    }
+
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(ve_pro_file_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream) != ve_pro_file_header_text[i])
+            bad_header = true;
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream, &version);
+    if (bad_header || version != ve_pro_file_version) {
+        fall_fclose(FileStream);
+        Fallout_Debug_Error("VE_PROTO_LightColour_Read failed: bad header");
+        return false;
+    }
+
+    //read the colour value to the proto structure
+    if(pColour)
+        fall_fread32_BE(FileStream, pColour);
+    //Fallout_Debug_Info("Proto_File_Close_For_Reading to:%X %X %X %X %X %X", pProDx->item.proID, pProDx->item.txtID, pProDx->item.frmID, pProDx->item.light_radius, pProDx->item.light_intensity, pProDx->item.flags);
+
+    fall_fclose(FileStream);
+    //Fallout_Debug_Info("Proto_File_Close_For_Reading to:%s", path);
+    return true;
+}
+
+//_______________________________________________________________
+bool VE_MAP_CopyFiles(const char* pFromPath, const char* pToPath) {
+
+    void* FileStream_From = nullptr;
+    void* FileStream_To = nullptr;
+
+    char path[MAX_PATH];
+
+    sprintf_s(path, MAX_PATH, "%s", pFromPath);
+    char* p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        //Fallout_Debug_Info("VE_MAP_CopyFiles from:%s", path);
+        FileStream_From = fall_fopen(path, "rb");
+        if (FileStream_From == nullptr)
+            return false;
+    }
+    else
+        return false;
+
+    sprintf_s(path, MAX_PATH, "%s", pToPath);
+    p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        //Fallout_Debug_Info("VE_MAP_CopyFiles to:%s", path);
+        FileStream_To = fall_fopen(path, "wb");
+        if (FileStream_To == nullptr) {
+            fall_fclose(FileStream_From);
+            return false;
+        }
+    }
+    else {
+        fall_fclose(FileStream_From);
+        return false;
+    }
+    int data = 0;
+    while ((data = fall_fgetc(FileStream_From)) != EOF)
+        fall_fputc(data, FileStream_To);
+    /*
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(ve_map_file_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream_From) != ve_map_file_header_text[i])
+            bad_header = true;
+        fall_fputc(ve_map_file_header_text[i], FileStream_To);
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream_From, &version);
+    fall_fwrite32_BE(FileStream_To, version);
+
+
+    LONG num_objects_total = 0;
+        fall_fread32_BE(FileStream_From, (DWORD*)&num_objects_total);
+        fall_fwrite32_BE(FileStream_To, num_objects_total);
+
+    if (bad_header || version != ve_map_file_version) {
+        fall_fclose(FileStream_From);
+        fall_fclose(FileStream_To);
+        Fallout_Debug_Error("VE_MAP_CopyFiles failed: bad header");
+        return false;
+    }
+    
+    DWORD dVal = 0;
+    for (int i = 0; i < num_objects_total; i++) {
+        
+        fall_fread32_BE(FileStream_From, &dVal);
+        fall_fwrite32_BE(FileStream_To, dVal);
+
+        fall_fread32_BE(FileStream_From, &dVal);
+        fall_fwrite32_BE(FileStream_To, dVal);
+    }
+
+    //DWORD dVal = 0;
+    //while (fall_fread32_BE(FileStream_From, &dVal))
+    //    fall_fwrite32_BE(FileStream_To, dVal);
+    */
+    fall_fclose(FileStream_From);
+    fall_fclose(FileStream_To);
+
+    ///Fallout_Debug_Info("VE_MAP_CopyFiles to: %s from: %s", toPath, fromPath);
+    return true;
+
+}
+
+
+//______________________________________
+LONG VE_MAP_DeleteTmps(const char* path) {
+
+    //Fallout_Debug_Info("VE_MAP_DeleteTmps: %s", path);
+    return fall_Files_Delete(path, "ves");
+}
+
+
+//____________________________________________________________
+bool VE_MAP_Open_WRITE(const char* path, void* FileStream_MAP) {
+    
+    FileStream_MAP_SAVE = FileStream_MAP;
+    if (!FileStream_MAP_SAVE)
+        return false;
+
+    char mapPath[256];
+    sprintf_s(mapPath, 256, "%s", path);
+    char* p_ext = strrchr(mapPath, '.');
+
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        FileStream_MAP_SAVE_VE = fall_fopen(mapPath, "wb");
+    }
+
+    if (!FileStream_MAP_SAVE_VE) {
+        Fallout_Debug_Error("VE_MAP_Open_WRITE failed: %s", mapPath);
+        return false;
+    }
+
+    //write file header
+    fall_fwrite(ve_map_file_header_text, sizeof(ve_map_file_header_text) - 1, 1, FileStream_MAP_SAVE_VE);
+    fall_fwrite32_BE(FileStream_MAP_SAVE_VE, ve_map_file_version);
+    
+    ve_file_position_num_objects_map = fall_ftell(FileStream_MAP_SAVE_VE);
+    ve_num_objects_total_map_write = 0;
+    fall_fwrite32_BE(FileStream_MAP_SAVE_VE, ve_num_objects_total_map_write);
+
+    //Fallout_Debug_Info("VE_MAP_Open_WRITE %s", mapPath);
+    return true;
+}
+
+
+//___________________________________________________________
+bool VE_MAP_Open_READ(const char* path, void* FileStream_MAP) {
+
+    FileStream_MAP_LOAD = FileStream_MAP;
+    if (!FileStream_MAP_LOAD)
+        return false;
+
+    char mapPath[256];
+    sprintf_s(mapPath, 256, "%s", path);
+    char* p_ext = strrchr(mapPath, '.');
+
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        FileStream_MAP_LOAD_VE = fall_fopen(mapPath, "rb");
+        //if no ".ves" saved data found try opening ".vem" map start data.
+        if (!FileStream_MAP_LOAD_VE) {
+            strcpy_s(p_ext, 5, ".vem");
+            FileStream_MAP_LOAD_VE = fall_fopen(mapPath, "rb");
+        }
+    }
+
+    if (!FileStream_MAP_LOAD_VE) {
+        //Fallout_Debug_Error("VE_MAP_Open_READ failed: %s", mapPath);
+        return false;
+    }
+
+    //read file header
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(ve_map_file_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream_MAP_LOAD_VE) != ve_map_file_header_text[i])
+            bad_header = true;
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream_MAP_LOAD_VE, &version);
+
+
+    fall_fread32_BE(FileStream_MAP_LOAD_VE, (DWORD*) &ve_num_objects_total_map_read);
+
+    ve_num_objects_read_map = 0;
+
+    if (bad_header || version != ve_map_file_version) {
+        fall_fclose(FileStream_MAP_LOAD_VE);
+        FileStream_MAP_LOAD_VE = nullptr;
+        Fallout_Debug_Error("VE_MAP_Open_READ failed: bad header");
+    }
+
+    //Fallout_Debug_Info("VE_MAP_Open_READ %s", mapPath);
+    return true;
+}
+
+
+//_______________________
+void VE_MAP_Close_WRITE() {
+
+    if (FileStream_MAP_SAVE_VE)
+        fall_fclose(FileStream_MAP_SAVE_VE);
+    FileStream_MAP_SAVE_VE = nullptr;
+    //Fallout_Debug_Info("VE_MAP_Close_WRITE num obj:%d", ve_num_objects_total_map_write);
+}
+
+
+//______________________
+void VE_MAP_Close_READ() {
+
+    if (FileStream_MAP_LOAD_VE)
+        fall_fclose(FileStream_MAP_LOAD_VE);
+    FileStream_MAP_LOAD_VE = nullptr;
+    //Fallout_Debug_Info("VE_MAP_Close_READ num obj:%d %d", ve_num_objects_read_map, ve_num_objects_total_map_read);
+}
+
+
+//_____________________________________________________________
+bool VE_SAVE_DAT_Open_WRITE(const char* path, void* FileStream) {
+
+    FileStream_SAVE_DAT = FileStream;
+    if (!FileStream_SAVE_DAT)
+        return false;
+
+    char mapPath[256];
+    sprintf_s(mapPath, 256, "%s", path);
+    char* p_ext = strrchr(mapPath, '.');
+
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        FileStream_SAVE_DAT_VE = fall_fopen(mapPath, "wb");
+    }
+    if (!FileStream_SAVE_DAT_VE) {
+        Fallout_Debug_Error("VE_SAVE_DAT_Open_WRITE failed: %s", mapPath);
+        return false;
+    }
+
+    fall_fwrite(ve_map_file_header_text, sizeof(ve_map_file_header_text) - 1, 1, FileStream_SAVE_DAT_VE);
+    fall_fwrite32_BE(FileStream_SAVE_DAT_VE, ve_map_file_version);
+
+    ve_file_position_num_objects_save_dat = fall_ftell(FileStream_SAVE_DAT_VE);
+    ve_num_objects_total_save_dat = 0;
+    fall_fwrite32_BE(FileStream_SAVE_DAT_VE, ve_num_objects_total_save_dat);
+
+    //Fallout_Debug_Info("VE_SAVE_DAT_Open_WRITE %s", mapPath);
+    return true;
+}
+
+
+//____________________________________________________________
+bool VE_SAVE_DAT_Open_READ(const char* path, void* FileStream) {
+
+    FileStream_SAVE_DAT = FileStream;
+    if (!FileStream_SAVE_DAT)
+        return false;
+
+    char mapPath[256];
+    sprintf_s(mapPath, 256, "%s", path);
+    char* p_ext = strrchr(mapPath, '.');
+
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".ves");
+        FileStream_SAVE_DAT_VE = fall_fopen(mapPath, "rb");
+    }
+    if (!FileStream_SAVE_DAT_VE) {
+        //Fallout_Debug_Error("VE_SAVE_DAT_Open_READ failed: %s", mapPath);
+        return false;
+    }
+
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(ve_map_file_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream_SAVE_DAT_VE) != ve_map_file_header_text[i])
+            bad_header = true;
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream_SAVE_DAT_VE, &version);
+
+
+    fall_fread32_BE(FileStream_SAVE_DAT_VE, (DWORD*)&ve_num_objects_total_save_dat);
+
+    ve_num_objects_read_save_dat = 0;
+
+    if (bad_header || version != ve_map_file_version) {
+        fall_fclose(FileStream_SAVE_DAT_VE);
+        FileStream_SAVE_DAT_VE = nullptr;
+        Fallout_Debug_Error("VE_SAVE_DAT_Open_READ failed: bad header v:%d", version);
+    }
+
+    //Fallout_Debug_Info("VE_SAVE_DAT_Open_READ %s", mapPath);
+    return true;
+}
+
+
+//______________________________________
+LONG VE_SAVE_DAT_Close(void* FileStream) {
+    
+    if(FileStream_SAVE_DAT_VE)
+        fall_fclose(FileStream_SAVE_DAT_VE);
+    FileStream_SAVE_DAT_VE = nullptr;
+    //Fallout_Debug_Info("VE_SAVE_DAT_Close");
+    return fall_fclose(FileStream);
+}
+
+
+//______________________________________________________
+bool LightColour_Read(void* FileStream, OBJStruct* pObj) {
+
+    if (!pObj)
+        return false;
+
+    void* FileStream_VE = nullptr;
+    LONG* p_num_objects = nullptr;
+    LONG* p_num_objects_total = nullptr;
+    if (FileStream == FileStream_MAP_LOAD) {
+        FileStream_VE = FileStream_MAP_LOAD_VE;
+        p_num_objects_total = &ve_num_objects_total_map_read;
+        p_num_objects = &ve_num_objects_read_map;
+    }
+    else if (FileStream == FileStream_SAVE_DAT) {
+        FileStream_VE = FileStream_SAVE_DAT_VE;
+        p_num_objects_total = &ve_num_objects_total_save_dat;
+        p_num_objects = &ve_num_objects_read_save_dat;
+    }
+    if (!FileStream_VE) {
+        //Fallout_Debug_Error("LightColour_Read failed: file stream NULL!");
+        return false;
+    }
+
+    if (p_num_objects_total && p_num_objects) {
+        if (*p_num_objects > *p_num_objects_total) {
+            Fallout_Debug_Error("LightColour_Read failed, exceding total objects:%d", *p_num_objects_total);
+            return false;
+        }
+        *p_num_objects += 1;
+    }
+
+    DWORD objID = 0;
+    fall_fread32_BE(FileStream_VE, &objID);
+    DWORD colour = 0;
+    fall_fread32_BE(FileStream_VE, &colour);
+    if (objID != pObj->objID) {
+        Fallout_Debug_Error("LightColour_Read failed obj_id mismatch ves:%d, obj:%d", objID, pObj->objID);
+        return false;
+    }
+
+    ((OBJStructDx*)pObj)->light_colour = (colour & 0xFFFFFF00);
+    return true;
+}
+
+
+//_______________________________________________________
+bool LightColour_Write(void* FileStream, OBJStruct* pObj) {
+
+    if (!pObj)
+        return false;
+
+    void* FileStream_VE = nullptr;
+    LONG file_position_num_objects = 0;
+    LONG* p_num_objects_total = nullptr;
+
+    if (FileStream == FileStream_MAP_SAVE) {
+        FileStream_VE = FileStream_MAP_SAVE_VE;
+        file_position_num_objects = ve_file_position_num_objects_map;
+        p_num_objects_total = &ve_num_objects_total_map_write;
+    }
+    else if (FileStream == FileStream_SAVE_DAT) {
+        FileStream_VE = FileStream_SAVE_DAT_VE;
+        file_position_num_objects = ve_file_position_num_objects_save_dat;
+        p_num_objects_total = &ve_num_objects_total_save_dat;
+    }
+
+
+    if (!FileStream_VE) {
+        Fallout_Debug_Error("LightColour_Write failed: file stream NULL!");
+        return false;
+    }
+
+    fall_fwrite32_BE(FileStream_VE, pObj->objID);
+    fall_fwrite32_BE(FileStream_VE, ((OBJStructDx*)pObj)->light_colour & 0xFFFFFF00);
+
+    if (p_num_objects_total) {
+        *p_num_objects_total += 1;
+        LONG current_file_pos = fall_ftell(FileStream_VE);
+        fall_fseek(FileStream_VE, file_position_num_objects, SEEK_SET);
+        fall_fwrite32_BE(FileStream_VE, *p_num_objects_total);
+        fall_fseek(FileStream_VE, current_file_pos, SEEK_SET);
+    }
+    return true;
+}
+
+
 //____________________________________________________________________
 bool FogOfWarMap_CopyFiles(const char* pFromPath, const char* pToPath) {
     if (!FOG_OF_WAR)
         return false;
 
-    char* fromPath = new char[256];
-    sprintf_s(fromPath, 256, "%s", pFromPath);
-    memcpy(strchr(fromPath, '.'), ".fog\0", 5);
-    char* toPath = new char[256];
-    sprintf_s(toPath, 256, "%s", pToPath);
-    memcpy(strchr(toPath, '.'), ".fog\0", 5);
+    void* FileStream_From = nullptr;
+    void* FileStream_To = nullptr;
 
+    char path[MAX_PATH];
 
-    void* FileStream_From = fall_fopen(fromPath, "rb");
-    if (FileStream_From == nullptr)
+    sprintf_s(path, MAX_PATH, "%s", pFromPath);
+    char* p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".fog");
+        //Fallout_Debug_Info("FogOfWarMap_CopyFiles from:%s", path);
+        FileStream_From = fall_fopen(path, "rb");
+        if (FileStream_From == nullptr)
+            return false;
+    }
+    else
         return false;
-    void* FileStream_To = fall_fopen(toPath, "wb");
-    if (FileStream_To == nullptr) {
+
+    sprintf_s(path, MAX_PATH, "%s", pToPath);
+    p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".fog");
+        //Fallout_Debug_Info("FogOfWarMap_CopyFiles to:%s", path);
+        FileStream_To = fall_fopen(path, "wb");
+        if (FileStream_To == nullptr) {
+            fall_fclose(FileStream_From);
+            return false;
+        }
+    }
+    else {
         fall_fclose(FileStream_From);
+        return false;
+    }
+    int data = 0;
+    while ((data = fall_fgetc(FileStream_From)) != EOF)
+        fall_fputc(data, FileStream_To);
+    /*
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(fog_data_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream_From) != fog_data_header_text[i])
+            bad_header = true;
+        fall_fputc(fog_data_header_text[i], FileStream_To);
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream_From, &version);
+    fall_fwrite32_BE(FileStream_To, fog_data_version);
+
+    if (bad_header || version != fog_data_version) {
+        fall_fclose(FileStream_From);
+        fall_fclose(FileStream_To);
+        Fallout_Debug_Error("FogOfWarMap_CopyFiles failed: bad header");
         return false;
     }
 
     DWORD dVal = 0;
     DWORD numDwords = 0;
 
-    fall_fread32_BE(FileStream_From, &dVal);
-    if (dVal == 0x464F474F) {
-        fall_fwrite32_BE(FileStream_To, 0x464F474F);//"FOGO"
-        fall_fread32_BE(FileStream_From, &dVal);
-        if (dVal == 0x46574152)
-            fall_fwrite32_BE(FileStream_To, 0x46574152);//"FWAR"
-        else {
-            fall_fclose(FileStream_From);
-            fall_fclose(FileStream_To);
-            return false;
-        }
-        fall_fread32_BE(FileStream_From, &dVal);//version
-        if (dVal == 0x00000001)//version1
-            fall_fwrite32_BE(FileStream_To, 0x00000001);//version1
-        else {
-            fall_fclose(FileStream_From);
-            fall_fclose(FileStream_To);
-            return false;
-        }
-    }
-    fall_fread32_BE(FileStream_From, &dVal);//numBits
-    fall_fwrite32_BE(FileStream_To, dVal);
-    fall_fread32_BE(FileStream_From, &numDwords);
-    fall_fwrite32_BE(FileStream_To, numDwords);
-    for (DWORD i = 0; i < numDwords; i++) {
-        fall_fread32_BE(FileStream_From, &dVal);
+    if (fall_fread32_BE(FileStream_From, &dVal)) {//numBits
         fall_fwrite32_BE(FileStream_To, dVal);
+        if (fall_fread32_BE(FileStream_From, &numDwords)) {
+            fall_fwrite32_BE(FileStream_To, numDwords);
+            for (DWORD i = 0; i < numDwords; i++) {
+                if (fall_fread32_BE(FileStream_From, &dVal))
+                    fall_fwrite32_BE(FileStream_To, dVal);
+                else {
+                    i = numDwords;
+                    Fallout_Debug_Error("FogOfWarMap_CopyFiles failed: bad data read");
+                }
+            }
+        }
+        else
+            Fallout_Debug_Error("FogOfWarMap_CopyFiles failed: bad numDwords read");
     }
+    else
+        Fallout_Debug_Error("FogOfWarMap_CopyFiles failed: bad numBits read");*/
     fall_fclose(FileStream_From);
     fall_fclose(FileStream_To);
 
@@ -1412,7 +1943,7 @@ bool FogOfWarMap_CopyFiles(const char* pFromPath, const char* pToPath) {
 LONG FogOfWarMap_DeleteTmps(const char *path) {
     if (!FOG_OF_WAR)
         return false;
-    //return numFiles
+    //Fallout_Debug_Info("FogOfWarMap_DeleteTmps: %s", path);
     return fall_Files_Delete(path, "fog");
 }
 
@@ -1422,18 +1953,22 @@ bool FogOfWarMap_Save(const char *MapName) {
     if (!FOG_OF_WAR)
         return false;
 
-    char mapPath[256];
-    sprintf_s(mapPath, 256, "%s", MapName);
-    memcpy(strchr(mapPath, '.'), ".fog\0", 5);
+    void* FileStream = nullptr;
+    char path[MAX_PATH];
 
-    void *FileStream = fall_fopen(mapPath, "wb");
+    sprintf_s(path, MAX_PATH, "%s", MapName);
+    char* p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".fog");
+        //Fallout_Debug_Info("FogOfWarMap_Save: %s", path);
+        FileStream = fall_fopen(path, "wb");
+    }
     if (FileStream == nullptr)
         return false;
 
     if (fogHexMapBits) {
-        fall_fwrite32_BE(FileStream, 0x464F474F);//"FOGO"
-        fall_fwrite32_BE(FileStream, 0x46574152);//"FWAR"
-        fall_fwrite32_BE(FileStream, 0x00000001);//version1
+        fall_fwrite(fog_data_header_text, sizeof(fog_data_header_text) - 1, 1, FileStream);
+        fall_fwrite32_BE(FileStream, fog_data_version);
         fall_fwrite32_BE(FileStream, fogHexMapBits->NumBits());
         fall_fwrite32_BE(FileStream, fogHexMapBits->NumDwords());
         for (DWORD i = 0; i < fogHexMapBits->NumDwords(); i++) 
@@ -1457,43 +1992,59 @@ bool FogOfWarMap_Load(const char* MapName) {
         fogHexMapBits = nullptr;
     }
 
-    char mapPath[256];
-    sprintf_s(mapPath, 256, "maps\\%s", MapName);
-    memcpy(strchr(mapPath, '.'), ".fog\0", 5);
-    void* FileStream = fall_fopen(mapPath, "rb");
+    void* FileStream = nullptr;
+    char path[MAX_PATH];
+
+    sprintf_s(path, MAX_PATH, "maps\\%s", MapName);
+    //sprintf_s(path, MAX_PATH, "%s", MapName);
+    char* p_ext = strrchr(path, '.');
+    if (p_ext) {
+        strcpy_s(p_ext, 5, ".fog");
+        //Fallout_Debug_Info("FogOfWarMap_Load: %s", path);
+        FileStream = fall_fopen(path, "rb");
+    }
+
     if (FileStream == nullptr) {
         fogHexMapBits = new bitset(*pNUM_HEXES * 3);
         return false;
     }
 
     DWORD dVal = 0;
-    if (!fogHexMapBits) {
-        fall_fread32_BE(FileStream, &dVal);//0x464F474F);//"FOGO"
-        if (dVal == 0x464F474F) {
-            fall_fread32_BE(FileStream, &dVal);//0x47574152);//"FWAR"
-            if (dVal != 0x46574152) {
-                fall_fclose(FileStream);
-                return false;
-            }
-            fall_fread32_BE(FileStream, &dVal);
-            if (dVal != 0x00000001) {//version1
-                fall_fclose(FileStream);
-                return false;
-            }
-        }
-        fall_fread32_BE(FileStream, &dVal);
-        fogHexMapBits = new bitset(dVal);
-        fall_fread32_BE(FileStream, &dVal);
-        for (DWORD i = 0; i < fogHexMapBits->NumDwords(); i++) {
-            fall_fread32_BE(FileStream, &dVal);
-            fogHexMapBits->SetDword(i, dVal);
-        }
+
+    bool bad_header = false;
+    for (int i = 0; i < sizeof(fog_data_header_text) - 1; i++) {
+        if (fall_fgetc(FileStream) != fog_data_header_text[i])
+            bad_header = true;
+    }
+    DWORD version = 0;
+    fall_fread32_BE(FileStream, &version);
+    if (bad_header || version != fog_data_version) {
+        fall_fclose(FileStream);
+        FileStream = nullptr;
+        Fallout_Debug_Error("FogOfWarMap_Load failed: bad header");
+        return false;
     }
 
-    fall_fclose(FileStream);
-    ///Fallout_Debug_Info("Fog Loaded %s", mapPath);
+    if (fall_fread32_BE(FileStream, &dVal)) {
+        fogHexMapBits = new bitset(dVal);
+        if (fall_fread32_BE(FileStream, &dVal) && dVal == fogHexMapBits->NumDwords()) {
+            for (DWORD i = 0; i < fogHexMapBits->NumDwords(); i++) {
+                if(fall_fread32_BE(FileStream, &dVal))
+                    fogHexMapBits->SetDword(i, dVal);
+                else {
+                    i = fogHexMapBits->NumDwords();
+                    Fallout_Debug_Error("FogOfWarMap_Load failed: bad data read");
+                }
+            }
+        }
+        else
+            Fallout_Debug_Error("FogOfWarMap_Load failed: bad NumDwords read");
+    }
+    else
+        Fallout_Debug_Error("FogOfWarMap_Load failed: bad numBits read");
 
-    //ReDrawViewWin();
+    fall_fclose(FileStream);
+    ///Fallout_Debug_Info("FogOfWarMap_Load %s", mapPath);
     return true;
 }
 

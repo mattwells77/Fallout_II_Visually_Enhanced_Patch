@@ -390,7 +390,7 @@ void LS_Save_Picture_To_File(const char* p_save_dat_path) {
     }
 }
 
-
+/*
 //__________________________________________________
 void __declspec(naked) h_save_picture_to_file(void) {
 
@@ -428,7 +428,7 @@ void __declspec(naked) h_save_picture_to_file(void) {
     }
 
 }
-
+*/
 
 //____________________________________
 void LoadSave_Destructor(LS_TYPE type) {
@@ -1530,7 +1530,7 @@ void Modifications_LoadSave_MULTI() {
 
 
     //save save.bmp
-    FuncReplace32(0x47DA15, 0x000484AF, (DWORD)&h_save_picture_to_file);
+    //FuncReplace32(0x47DA15, 0x000484AF, (DWORD)&h_save_picture_to_file);
     //load save.bmp
     FuncReplace32(0x47ED50, 0x00047160, (DWORD)&h_load_picture_from_file);
 
