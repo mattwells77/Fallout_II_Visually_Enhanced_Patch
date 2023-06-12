@@ -339,6 +339,23 @@ int fall_fgetc(void* FileStream) {
 }
 
 
+
+//____________________________________________________
+char* fall_fgets(char *string, int num, void* FileStream) {
+    char* retVal = nullptr;
+    __asm {
+        mov ebx, FileStream
+        mov edx, num
+        mov eax, string
+        CALL pfall_fgets
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+
+
 //______________________________________________________________________
 int fall_fread(void* buffer, size_t size_, size_t num, void* FileStream) {
     int retVal;

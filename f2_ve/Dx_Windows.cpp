@@ -1475,7 +1475,7 @@ void DrawFalloutWindows(RECT* pRect, BYTE* pBuff) {
     *p_draw_window_flag = 0;
 
     if (!pBuff && !IsMouseHidden()) {
-        if (IsMouseInRect(pRect))
+        if (IsMouseInRect(pRect)) 
             fall_Mouse_Show();
     }
     Dx_PresentSkip = 0;

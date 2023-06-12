@@ -41,13 +41,120 @@ LONG(*fall_scripts_game_clear)() = nullptr;
 
 void(*fall_scripts_free_msglist)() = nullptr;
 
-void *pfall_script_get = nullptr;
+void* pfall_script_get = nullptr;
 
-void * pfall_script_get_path = nullptr;
+void* pfall_script_get_path = nullptr;
 
 LONG(*fall_script_proccessing_enable)() = nullptr;
 void(*fall_script_proccessing_disable)() = nullptr;
 void(*fall_script_remove_all)() = nullptr;
+
+void* pfall_script_remove = nullptr;
+
+void* pfall_set_map_script = nullptr;
+
+void* pfall_get_num_active_scripts = nullptr;
+
+void* pfall_script_find_str_run_info = nullptr;
+
+void* pfall_script_new = nullptr;
+
+void* pfall_script_find_first_at = nullptr;
+void* pfall_script_find_next_at = nullptr;
+
+
+//__________________________________________________
+SCRIPT_STRUCT* fall_Script_Find_First_At(LONG level) {
+
+    SCRIPT_STRUCT* retVal = nullptr;
+    __asm {
+        mov eax, level
+        call pfall_script_find_first_at
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_________________________________________________
+SCRIPT_STRUCT* fall_Script_Find_Next_At(LONG level) {
+
+    SCRIPT_STRUCT* retVal = nullptr;
+    __asm {
+        call pfall_script_find_next_at
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_______________________________________________________
+LONG fall_Script_New(DWORD* p_scriptID, LONG script_type) {
+
+    LONG retVal = -1;
+    __asm {
+
+        mov edx, script_type
+        mov eax, p_scriptID
+        call pfall_script_new
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________________________________________________
+LONG fall_Script_Find_Str_Run_Info(LONG level, DWORD* p_scr_50, DWORD scriptID) {
+
+    LONG retVal = -1;
+    __asm {
+        mov ebx, scriptID
+        mov edx, p_scr_50
+        mov eax, level
+        call pfall_script_find_str_run_info
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________________________
+LONG fall_Get_Number_Of_Active_Scripts(LONG scriptType) {
+
+    LONG retVal = 0;
+    __asm {
+        mov eax, scriptType
+        call pfall_get_num_active_scripts
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_________________________________________
+LONG fall_Set_Map_Script(LONG scriptIndex) {
+
+    LONG retVal = -1;
+    __asm {
+        mov eax, scriptIndex
+        call pfall_set_map_script
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________
+LONG fall_Script_Remove(DWORD scriptID) {
+
+    LONG retVal = -1;
+    __asm {
+        mov eax, scriptID
+        call pfall_script_remove
+        mov retVal, eax
+    }
+    return retVal;
+}
 
 
 //_____________________________________
@@ -123,6 +230,20 @@ void Fallout_Functions_Setup_Scripts() {
         fall_script_proccessing_enable = (LONG(*)())FixAddress(0x4A53A8);
         fall_script_proccessing_disable = (void (*)())FixAddress(0x4A53D0);
         fall_script_remove_all = (void (*)())FixAddress(0x4A63E0);
+
+        pfall_script_remove = (void*)FixAddress(0x4A61D4);
+
+        pfall_set_map_script = (void*)FixAddress(0x482360);
+
+        pfall_get_num_active_scripts = (void*)FixAddress(0x4A672C);
+
+        pfall_script_find_str_run_info = (void*)FixAddress(0x4A4F28);
+
+        pfall_script_new = (void*)FixAddress(0x4A5F28);
+
+
+        pfall_script_find_first_at = (void*)FixAddress(0x4A6524);
+        pfall_script_find_next_at = (void*)FixAddress(0x4A6564);
     }
 
 }

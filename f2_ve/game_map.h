@@ -100,12 +100,20 @@ private:
 
 
 bool SetViewHexNum(LONG xSqu, LONG ySqu);
+//Converts hex XY coordinates to scroll grid XY coordinates in pixels - to the nearest block of 32x24 pixels (1 hex wide, 2 hexes high)
+void Hex2Sqr_Scroll(LONG x, LONG y, LONG* px, LONG* py);
+//Converts square XY coordinates in pixels to scroll hex XY coordinates - to the nearest block of 32x24 pixels (1 hex wide, 2 hexes high)
+void SqrToHex_Scroll(LONG x, LONG y, LONG* px, LONG* py);
 //Converts hex number to rectangular scroll grid coordinates in pixels - to the nearest block of 32x24 pixels (1 hex wide, 2 hexes high)
 void HexNumToSqr_Scroll(LONG hexNum, LONG* px, LONG* py);
 //Converts rectangular scroll grid coordinates in pixels to hex number - to the nearest block of 32x24 pixels (1 hex wide, 2 hexes high)
 LONG SqrToHexNum_Scroll(LONG x, LONG y);
 //Converts rectangular XY coordinates in pixels to hex number - with xy offsets needed by game functions
 LONG SqrToHexNum_GameOffset(LONG x, LONG y);
+//Converts rectangular XY coordinates in pixels to hex xy position, returns hex number - with xy offsets needed by game functions
+LONG SqrToHexPos_GameOffset(LONG x, LONG y, LONG* px, LONG* py);
+//Converts hex XY to rectangular XY coordinates in pixels - with xy offsets needed by game functions
+LONG HexToSqr_GameOffset(LONG x, LONG y, LONG* px, LONG* py);
 //Converts hex number to rectangular XY coordinates in pixels - with xy offsets needed by game functions
 LONG HexNumToSqr_GameOffset(LONG hexNum, LONG* px, LONG* py);
 //Converts hex number to rectangular XY coordinates in units of 16x12
@@ -120,12 +128,18 @@ void HexNumToSqr(LONG hexNum, LONG* px, LONG* py);
 LONG SqrToHexNum(LONG x, LONG y);
 //Converts hex number to hex XY coordinates
 bool HexNumToHexPos(LONG hexNum, LONG* x, LONG* y);
+//Converts hex XY coordinates to hex number
+bool HexPosToHexNum(LONG* p_hexPos, LONG x, LONG y);
 //Converts hex number to floor tile number
 LONG HexNumToTileNum(LONG hexNum);
 //Converts floor tile number to hex number
 LONG TileNumToHexNum(LONG tileNum);
 //Converts floor tile number to rectangular XY coordinates in pixels
 void TileToSqr(LONG tileNum, LONG* px, LONG* py);
+//Converts floor tile XY to rectangular XY coordinates in pixels
+void TileToSqr(LONG x, LONG y, LONG* px, LONG* py);
+//Converts rectangular XY coordinates in pixels to floor tile XY
+bool SqrToTile(LONG x, LONG y, LONG* pTileX, LONG* pTileY);
 //Converts rectangular XY coordinates in pixels to floor tile number - with xy offsets needed by game functions
 bool SqrToTile_GameOffset(LONG x, LONG y, LONG* pTileX, LONG* pTileY);
 //Converts rectangular XY coordinates in pixels to roof tile number - with xy offsets needed by game functions
@@ -134,8 +148,20 @@ bool SqrToTile_Roof_GameOffset(LONG x, LONG y, LONG* pTileX, LONG* pTileY);
 void TileToSqr_GameOffsets(LONG tileNum, LONG* px, LONG* py);
 //Converts roof tile number to rectangular XY coordinates in pixels  - with xy offsets needed by game functions
 void TileToSqr_Roof_GameOffsets(LONG tileNum, LONG* px, LONG* py);
+//Converts tile number to tile XY coordinates
+bool TileNumToTilePos(LONG tileNum, LONG* px, LONG* py);
+//Converts tile XY coordinates to tile number
+bool TilePosToTileNum(LONG* p_tileNum, LONG x, LONG y);
+
+//Converts rectangular XY coordinates in pixels to isometric XY coordinates
+//x and y values are scaled out to the nearest product (96) of 32 x-step and 12 y-step, to avoid loss in the conversion.
+void SqrToIso(LONG x, LONG y, LONG* px, LONG* py);
+//Converts isometric XY coordinates to rectangular XY coordinates in pixels
+//x and y values are scaled out to the nearest product (96) of 32 x-step and 12 y-step, to avoid loss in the conversion.
+void IsoToSqr(LONG x, LONG y, LONG* px, LONG* py);
 
 bool isHexWithinMapEdges(LONG hexPos);
+bool isHexWithinMapEdges(LONG hex_x, LONG hex_y);
 LONG GetNextHexPos(LONG hexPos, UINT direction, LONG distance);
 LONG GetHexDistance(LONG hexStart, LONG hexEnd);
 
@@ -178,4 +204,10 @@ bool LightColour_Write(void* FileStream,  OBJStruct* pObj);
 
 
 bool VE_PROTO_LightColour_Read(const char* path, PROTO* pPro);
+bool VE_PROTO_LightColour_Write(const char* path, PROTO* pPro);
+
 DWORD VE_PROTO_Get_Light_Colour(PROTO* pProDx);
+DWORD* VE_PROTO_Get_Light_Colour_Ptr(PROTO* pPro);
+
+DWORD GameMap_GetTileFrmID(LONG tileNum, LONG level, BOOL isRoof, DWORD* pRetTileFlags);
+BOOL GameMap_SetTileFrmID(LONG tileNum, LONG level, BOOL isRoof, DWORD frmID);

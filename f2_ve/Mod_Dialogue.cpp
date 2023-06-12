@@ -867,7 +867,7 @@ LONG Dialog_Barter_Setup() {
     }
     pObj = *ppObj_Barter3;
     pObj->flags |= 0x5;
-    pObj->scriptID1 = -1;
+    pObj->scriptID = -1;
 
     return 0;
 }

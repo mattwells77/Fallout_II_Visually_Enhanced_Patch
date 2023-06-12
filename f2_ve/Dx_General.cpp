@@ -94,6 +94,8 @@ using namespace DirectX::PackedVector;
 
 #include "shaders\compiled_h\PS_Colour_32_RevAlpha_ZeroMasked.h"
 
+#include "shaders\compiled_h\PS_Outline_Quad_32.h"
+
 
 //Direct3D device and swap chain.
 ID3D11Device* g_d3dDevice = nullptr;
@@ -201,6 +203,9 @@ ID3D11PixelShader* pd3d_PS_Colour_32_Brightness_ZeroMasked = nullptr;
 
 ID3D11PixelShader* pd3d_PS_Colour_32_RevAlpha_ZeroMasked = nullptr;
 
+ID3D11PixelShader* pd3d_PS_Outline_Quad_32 = nullptr;
+
+
 ID3D11SamplerState* pd3dPS_SamplerState_Point = nullptr;
 ID3D11SamplerState* pd3dPS_SamplerState_Linear = nullptr;
 
@@ -212,6 +217,8 @@ ID3D11BlendState* pBlendState_Four = nullptr;
 
 //every texture is drawn to a basic quad so uses the same index buffer;
 ID3D11Buffer* pVB_Quad_IndexBuffer = nullptr;
+
+ID3D11Buffer* pVB_Quad_Line_IndexBuffer = nullptr;
 
 
 ID3D11Device* GetD3dDevice() {
@@ -328,9 +335,9 @@ void Display_Release_RenderTargets() {
 
 //_______________
 void Dx_Present() {
-    if (!*p_is_winActive || isMapperSizing)
+    if (!Is_WindowActive() || isMapperSizing) 
         return;
-    if (!g_d3dDeviceContext)
+    if (!g_d3dDeviceContext) 
         return;
     if (Dx_PresentSkip)
         return;
@@ -1231,7 +1238,6 @@ bool GetColorPalette(DWORD* palette) {
 
 //___________
 void DxExit() {
-
     MouseDx_Destroy();
 
     if (color_pal)
@@ -1718,6 +1724,35 @@ bool Shader_Main_Setup() {
             return false;
         }
     }
+
+        if (!pVB_Quad_Line_IndexBuffer) {
+        WORD Indicies[5];
+        //Load the index array with data.
+        Indicies[0] = 0;  // Bottom left.
+        Indicies[1] = 1;  // Top left. 
+        Indicies[2] = 2;  // Top right.
+        Indicies[3] = 3;  // Bottom Right.
+        Indicies[4] = 4;  // Bottom left.
+
+
+        D3D11_SUBRESOURCE_DATA InitData;
+        ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+
+        //Create and initialize the index buffer.
+        D3D11_BUFFER_DESC indexBufferDesc;
+        ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+        indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        indexBufferDesc.ByteWidth = sizeof(WORD) * _countof(Indicies);
+        indexBufferDesc.CPUAccessFlags = 0;
+        indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+        InitData.pSysMem = Indicies;
+
+        HRESULT hr = pD3DDev->CreateBuffer(&indexBufferDesc, &InitData, &pVB_Quad_Line_IndexBuffer);
+        if (FAILED(hr)) {
+            return false;
+        }
+    }
     //set vetex shader stuff
     pD3DDevContext->VSSetShader(pd3dVertexShader_Main, nullptr, 0);
     pD3DDevContext->IASetInputLayout(pd3dVS_InputLayout_Main);
@@ -1895,6 +1930,14 @@ bool Shader_Main_Setup() {
         if (FAILED(hr))
             Fallout_Debug_Error("CreatePixelShader Failed - pd3d_PS_Draw_Dialog_HighLight.");
     }
+    if (!pd3d_PS_Outline_Quad_32) {
+        hr = pD3DDev->CreatePixelShader(pPS_Outline_Quad_32_mem, sizeof(pPS_Outline_Quad_32_mem), nullptr, &pd3d_PS_Outline_Quad_32);
+        if (FAILED(hr))
+            Fallout_Debug_Error("CreatePixelShader Failed - pd3d_PS_Draw_Dialog_HighLight.");
+    }
+
+
+
 
     //Create sampler states for texture sampling in the pixel shader.
     if (!pd3dPS_SamplerState_Point || !pd3dPS_SamplerState_Linear) {
@@ -2142,6 +2185,12 @@ void Shader_Main_Destroy() {
         pd3d_PS_Colour_32_RevAlpha_ZeroMasked->Release();
     pd3d_PS_Colour_32_RevAlpha_ZeroMasked = nullptr;
 
+    if (pd3d_PS_Outline_Quad_32)
+        pd3d_PS_Outline_Quad_32->Release();
+    pd3d_PS_Outline_Quad_32 = nullptr;
+    
+
+
     if (pPS_BuffersFallout)
         delete pPS_BuffersFallout;
     pPS_BuffersFallout = nullptr;
@@ -2149,6 +2198,12 @@ void Shader_Main_Destroy() {
     if (pVB_Quad_IndexBuffer)
         pVB_Quad_IndexBuffer->Release();
     pVB_Quad_IndexBuffer = nullptr;
+
+
+    if (pVB_Quad_Line_IndexBuffer)
+        pVB_Quad_Line_IndexBuffer->Release();
+    pVB_Quad_Line_IndexBuffer = nullptr;
+    
 }
 
 
@@ -2161,7 +2216,7 @@ bool CreateQuadVB(ID3D11Device* pD3DDev, unsigned int width, unsigned int height
     float right = (float)width;
     float bottom = (float)height;
 
-    VERTEX_BASE Vertices[4];
+    VERTEX_BASE Vertices[4]{};
 
     Vertices[0].Position = XMFLOAT3(left, bottom, 0.0f);  // bottom left.
     Vertices[0].texUV = XMFLOAT2(0.0f, 1.0f);
@@ -2179,6 +2234,211 @@ bool CreateQuadVB(ID3D11Device* pD3DDev, unsigned int width, unsigned int height
     Vertices[3].Position = XMFLOAT3(right, top, 0.0f);  // top right.
     Vertices[3].texUV = XMFLOAT2(1.0f, 0.0f);
     Vertices[3].Normal = XMFLOAT3(0.0f, 0.0f, -1.0f);
+
+    //Fill in a buffer description.
+    D3D11_BUFFER_DESC bufferDesc;
+    ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufferDesc.ByteWidth = sizeof(VERTEX_BASE) * _countof(Vertices);
+    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags = 0;
+    bufferDesc.MiscFlags = 0;
+
+    //Fill in the subresource data.
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+    InitData.pSysMem = Vertices;
+
+    //Create the vertex buffer.
+    HRESULT hr = pD3DDev->CreateBuffer(&bufferDesc, &InitData, &pVB);
+    if (FAILED(hr))
+        return false;
+
+    *lpVB = pVB;
+    pVB = nullptr;
+    return true;
+}
+
+
+
+//______________________________________________________________________________________________________________
+bool CreateQuadVB_LineStrip(ID3D11Device* pD3DDev, unsigned int width, unsigned int height, ID3D11Buffer** lpVB) {
+    ID3D11Buffer* pVB = nullptr;
+
+    float left = 0.0f;
+    float top = 0.0f;
+    float right = (float)width;
+    float bottom = (float)height;
+
+    VERTEX_BASE Vertices[5];
+    ZeroMemory(&Vertices, sizeof(VERTEX_BASE) * _countof(Vertices));
+
+    Vertices[0].Position = XMFLOAT3(left, bottom - 1.0f, 0.0f);  // Bottom left.
+    Vertices[1].Position = XMFLOAT3(left, top - 1.0f, 0.0f);  // Top left.
+    Vertices[2].Position = XMFLOAT3(right, top, 0.0f);  // Top right.
+    Vertices[3].Position = XMFLOAT3(right - 1.0f, bottom, 0.0f);  // Bottom right.
+    Vertices[4].Position = XMFLOAT3(left - 1.0f, bottom, 0.0f);  // Bottom left.
+
+    //Fill in a buffer description.
+    D3D11_BUFFER_DESC bufferDesc;
+    ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufferDesc.ByteWidth = sizeof(VERTEX_BASE) * _countof(Vertices);
+    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags = 0;
+    bufferDesc.MiscFlags = 0;
+
+    //Fill in the subresource data.
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+    InitData.pSysMem = Vertices;
+
+    //Create the vertex buffer.
+    HRESULT hr = pD3DDev->CreateBuffer(&bufferDesc, &InitData, &pVB);
+    if (FAILED(hr))
+        return false;
+
+    *lpVB = pVB;
+    pVB = nullptr;
+    return true;
+}
+
+/*
+//__________________________________________________________________________________________________________________
+bool CreateQuadVB_LineStrip_ISO(ID3D11Device* pD3DDev, unsigned int width, unsigned int height, ID3D11Buffer** lpVB) {
+    ID3D11Buffer* pVB = nullptr;
+
+    float left = 0.0f;
+    float top = 0.0f;
+    float right = (float)width;
+    float bottom = (float)height;
+
+    float x_unit = (float)width / 5.0f;
+
+    float lt_y = (float)height / 3.0f;
+    float lb_x = x_unit * 2;
+    float rb_y = lt_y * 2;
+    float rt_x = x_unit * 3;
+
+    VERTEX_BASE Vertices[5];
+    ZeroMemory(&Vertices, sizeof(VERTEX_BASE) * _countof(Vertices));
+
+    Vertices[0].Position = XMFLOAT3(lb_x, bottom - 1.0f, 0.0f);  // Bottom left.
+    Vertices[1].Position = XMFLOAT3(left, lt_y - 1.0f, 0.0f);  // Top left.
+    Vertices[2].Position = XMFLOAT3(rt_x, top, 0.0f);  // Top right.
+    Vertices[3].Position = XMFLOAT3(right - 1.0f, rb_y, 0.0f);  // Bottom right.
+    Vertices[4].Position = XMFLOAT3(lb_x - 1.0f, bottom, 0.0f);  // Bottom left.
+
+    //Fill in a buffer description.
+    D3D11_BUFFER_DESC bufferDesc;
+    ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufferDesc.ByteWidth = sizeof(VERTEX_BASE) * _countof(Vertices);
+    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags = 0;
+    bufferDesc.MiscFlags = 0;
+
+    //Fill in the subresource data.
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+    InitData.pSysMem = Vertices;
+
+    //Create the vertex buffer.
+    HRESULT hr = pD3DDev->CreateBuffer(&bufferDesc, &InitData, &pVB);
+    if (FAILED(hr))
+        return false;
+
+    *lpVB = pVB;
+    pVB = nullptr;
+    return true;
+}
+*/
+
+/*
+//__________________________________________________________________________________________________________________
+bool CreateQuadVB_LineStrip_ISO(ID3D11Device* pD3DDev, unsigned int iso_width, unsigned int iso_height, ID3D11Buffer** lpVB) {
+    ID3D11Buffer* pVB = nullptr;
+
+    //float left = 0.0f;
+    //float top = 0.0f;
+    //float right = (float)width;
+    //float bottom = (float)height;
+
+    float rt_x = 0.0f;
+    float rt_y = 0.0f;
+
+    float lt_y = rt_y + ((float)iso_width / 2);
+    float lt_x = -((float)iso_width * 2 - lt_y);
+
+    float rb_y = (float)iso_height + ((float)rt_x / 2);
+    float rb_x = -((float)rt_x * 2 - rb_y);
+
+    float lb_y = (float)iso_height + ((float)iso_width / 2);
+    float lb_x = -((float)iso_width * 2 - lb_y);
+
+    //float x_unit = (float)width / 5.0f;
+
+    //float lt_y = (float)height / 3.0f;
+    //float lb_x = x_unit * 2;
+    //float rb_y = lt_y * 2;
+    //float rt_x = x_unit * 3;
+
+    VERTEX_BASE Vertices[5];
+    ZeroMemory(&Vertices, sizeof(VERTEX_BASE) * _countof(Vertices));
+
+    Vertices[0].Position = XMFLOAT3(lb_x, lb_y - 1.0f, 0.0f);  // Bottom left.
+    Vertices[1].Position = XMFLOAT3(lt_x, lt_y - 1.0f, 0.0f);  // Top left.
+    Vertices[2].Position = XMFLOAT3(rt_x, rt_y, 0.0f);  // Top right.
+    Vertices[3].Position = XMFLOAT3(rb_x - 1.0f, rb_y, 0.0f);  // Bottom right.
+    Vertices[4].Position = XMFLOAT3(lb_x - 1.0f, lb_y, 0.0f);  // Bottom left.
+
+    //Fill in a buffer description.
+    D3D11_BUFFER_DESC bufferDesc;
+    ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+    bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    bufferDesc.ByteWidth = sizeof(VERTEX_BASE) * _countof(Vertices);
+    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags = 0;
+    bufferDesc.MiscFlags = 0;
+
+    //Fill in the subresource data.
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
+    InitData.pSysMem = Vertices;
+
+    //Create the vertex buffer.
+    HRESULT hr = pD3DDev->CreateBuffer(&bufferDesc, &InitData, &pVB);
+    if (FAILED(hr))
+        return false;
+
+    *lpVB = pVB;
+    pVB = nullptr;
+    return true;
+}
+*/
+
+
+//__________________________________________________________________________________________________________________________________
+bool CreateQuadrilateralVB_LineStrip(ID3D11Device* pD3DDev, POINT* p_lb, POINT* p_lt, POINT* p_rt, POINT* p_rb, ID3D11Buffer** lpVB) {
+    if (!p_lb || !p_lt || !p_rb || !p_rt) {
+        *lpVB = nullptr;
+        return false;
+    }
+        
+    ID3D11Buffer* pVB = nullptr;
+
+    VERTEX_BASE Vertices[5];
+    ZeroMemory(&Vertices, sizeof(VERTEX_BASE) * _countof(Vertices));
+
+    Vertices[0].Position = XMFLOAT3((float)p_lb->x, (float)p_lb->y - 1.0f, 0.0f);  // Bottom left.
+    Vertices[1].Position = XMFLOAT3((float)p_lt->x, (float)p_lt->y - 1.0f, 0.0f);  // Top left.
+    Vertices[2].Position = XMFLOAT3((float)p_rt->x, (float)p_rt->y, 0.0f);  // Top right.
+    Vertices[3].Position = XMFLOAT3((float)p_rb->x - 1.0f, (float)p_rb->y, 0.0f);  // Bottom right.
+    Vertices[4].Position = XMFLOAT3((float)p_lb->x - 1.0f, (float)p_lb->y, 0.0f);  // Bottom left.
 
     //Fill in a buffer description.
     D3D11_BUFFER_DESC bufferDesc;

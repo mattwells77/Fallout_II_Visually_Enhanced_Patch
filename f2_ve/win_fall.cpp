@@ -21,6 +21,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "pch.h"
+
+#include "resource.h"
 #include "win_fall.h"
 
 #include "modifications.h"
@@ -39,17 +41,14 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "text.h"
 
+#include "mapper\win_Mapper.h"
 
-struct POINTERstate {
-    LONG x;
-    LONG y;
-    WORD flags;
-};
-POINTERstate pointerState;
 
+POINTERstate pointerState{0,0,0};
 
 LONG SFALL_UseScrollWheel = 0;
 LONG SFALL_MiddleMouse = 'B';
+
 
 bool isGameMode = true;
 bool isMapperExiting = false;
@@ -71,7 +70,13 @@ HWND hGameWnd = nullptr;
 HINSTANCE* phInstance = nullptr;
 HHOOK* keyboardHook = nullptr;
 
-char winFallTitle[]= "Fallout II";
+LPSTR* ppCmdLineArgs = nullptr;
+
+//mapper
+HACCEL hAccelerators = nullptr;      // handle to accelerator table
+
+const wchar_t windowName_Game[]= L"Fallout II";
+const wchar_t* pWindowName = windowName_Game;
 
 BOOL* p_is_winActive = nullptr;
 
@@ -86,9 +91,11 @@ bool isAltMouseInput = false;
 
 bool isGrayScale = false;
 
-char winClassName[] = "GNW95 Class";
+wchar_t winClassName_Game[] = L"GNW95 Class";
 
-#define WIN_MODE_STYLE  WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+//wchar_t* winClassName = winClassName_Game;
+
+
 DWORD winStyle = WIN_MODE_STYLE;
 
 int* pPointerX = nullptr;
@@ -106,6 +113,24 @@ LONG* pPointerWidth = nullptr;
 LONG* pPointerHeight = nullptr;
 
 
+//____________________
+BOOL Is_WindowActive() {
+    if (!p_is_winActive) {
+        Fallout_Debug_Error("!p_is_winActive");
+        p_is_winActive = (BOOL*)FixAddress(0x51E444);
+    }
+    return *p_is_winActive;
+}
+
+//________________________________________
+void Set_WindowActive_State(BOOL isActive) {
+    if (!p_is_winActive) {
+        Fallout_Debug_Error("!p_is_winActive");
+        p_is_winActive = (BOOL*)FixAddress(0x51E444);
+    }
+    *p_is_winActive = isActive;
+    SetWindowActivation(isActive);
+}
 /*
 struct Fake_IDirectInputDeviceA {//just enough to make things work
     // IUnknown methods
@@ -177,10 +202,9 @@ BOOL Mouse_SetCooperativeLevel(DWORD flags) {
 void ClipAltMouseCursor() {
     if (!isAltMouseInput)
         return;
-    RECT rcClient;
-    POINT p;
-    p.x = p.y = 0;
+    POINT p{ 0,0 };
     ClientToScreen(hGameWnd, &p);
+    RECT rcClient;
     GetClientRect(hGameWnd, &rcClient);
     rcClient.left += p.x;
     rcClient.top += p.y;
@@ -208,16 +232,16 @@ void SetWindowActivation(BOOL isActive) {
     if (!isWindowed) {
         if (isActive == FALSE && winStyle == WS_POPUP) {//Convert to windowed mode when app loses focus.
             winStyle = WIN_MODE_STYLE;
-            SetWindowLongPtr(hGameWnd, GWL_EXSTYLE, 0);
-            SetWindowLongPtr(hGameWnd, GWL_STYLE, winStyle | WS_VISIBLE);
-            SetWindowPos(hGameWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
+            SetWindowLongPtr(*phWinMain, GWL_EXSTYLE, 0);
+            SetWindowLongPtr(*phWinMain, GWL_STYLE, winStyle | WS_VISIBLE);
+            SetWindowPos(*phWinMain, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
             ShowWindow(*phWinMain, SW_RESTORE);
         }
         else if (isActive && winStyle != WS_POPUP) {//Return to fullscreen mode when app regains focus.
             winStyle = WS_POPUP;
-            SetWindowLongPtr(hGameWnd, GWL_EXSTYLE, 0);
-            SetWindowLongPtr(hGameWnd, GWL_STYLE, winStyle | WS_VISIBLE);
-            SetWindowPos(hGameWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
+            SetWindowLongPtr(*phWinMain, GWL_EXSTYLE, 0);
+            SetWindowLongPtr(*phWinMain, GWL_STYLE, winStyle | WS_VISIBLE);
+            SetWindowPos(*phWinMain, HWND_TOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
             ShowWindow(*phWinMain, SW_MAXIMIZE);
         }
     }
@@ -227,10 +251,11 @@ void SetWindowActivation(BOOL isActive) {
 
 
 //_____________________________________________
-void SetWindowTitle(HWND hwnd, const char* msg) {
-    char winText[260];
-    sprintf_s(winText, 260, "%s  @%ix%ix%i   %s", winFallTitle, SCR_WIDTH, SCR_HEIGHT, 1 * scaleLevel_GUI, msg);
-    SendMessageA(hwnd, (UINT)WM_SETTEXT, (WPARAM)0, (LPARAM)winText);
+void SetWindowTitle(HWND hwnd, const wchar_t* msg) {
+    wchar_t winText[64];
+    swprintf_s(winText, 64, L"%s  @%ix%ix%i   %s", pWindowName, SCR_WIDTH, SCR_HEIGHT, 1 * scaleLevel_GUI, msg);
+    SendMessage(hwnd, WM_SETTEXT, (WPARAM)0, (LPARAM)winText);
+
 }
 
 
@@ -238,7 +263,7 @@ void SetWindowTitle(HWND hwnd, const char* msg) {
 void WindowVars_Save() {
 
     if (ConfigReadInt(L"MAIN", L"WINDOWED", 0)) {
-        WINDOWPLACEMENT winPlacement;
+        WINDOWPLACEMENT winPlacement{0};
         winPlacement.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(hGameWnd, &winPlacement);
         ConfigWriteWinData(L"MAIN", L"WIN_DATA", &winPlacement);
@@ -322,7 +347,7 @@ bool GUI_ScaleLevel_Adjust(bool direction) {
     
     WINDOWINFO windowInfo {0};
     windowInfo.cbSize = sizeof(WINDOWINFO);
-    GetWindowInfo(*phWinMain, &windowInfo);
+    GetWindowInfo(hGameWnd, &windowInfo);
 
     RECT winRect{ 0,0,0,0 };
 
@@ -564,11 +589,10 @@ bool Set_Window_Size_On_First_Show(HWND hwnd) {
         return false;
 
     hGameWnd = hwnd;
-    *phWinMain = hwnd;
 
     if (ConfigReadInt(L"MAIN", L"WINDOWED", 0)) {
         isWindowed = true;
-        WINDOWPLACEMENT winPlace;
+        WINDOWPLACEMENT winPlace{0};
         winPlace.length = sizeof(WINDOWPLACEMENT);
 
         if (ConfigReadWinData(L"MAIN", L"WIN_DATA", &winPlace)) {
@@ -604,11 +628,21 @@ bool CreateMainWindow() {
     //The window position, size and style are configured on first show.
 
     HINSTANCE hinstance = *phInstance;
+    HMENU hmenu = nullptr;
+    wchar_t* winClassName = winClassName_Game;
+
+
+    if (isRunAsMapper) {
+        hinstance = phinstDLL;
+        hmenu = (HMENU)IDR_MENU1;
+        hAccelerators = LoadAccelerators(hinstance, MAKEINTRESOURCE(IDR_ACCELERATOR1));
+        winClassName = winClassName_MapperMain;
+    }
     winStyle = WIN_MODE_STYLE;
     RECT rc_win{ 0,0,640,480 };
     AdjustWindowRectEx(&rc_win, winStyle, false, 0);
 
-    *phWinMain = CreateWindowExA(0, winClassName, winFallTitle,
+    *phWinMain = CreateWindowEx(0, winClassName, pWindowName,
         winStyle,
         0, 0, rc_win.right - rc_win.left, rc_win.bottom - rc_win.top,
         HWND_DESKTOP, nullptr, hinstance, nullptr);
@@ -631,8 +665,16 @@ int CheckMessages() {
     MsgWaitForMultipleObjectsEx(0, nullptr, 1, QS_ALLINPUT, 0);
     while (PeekMessage(&msg, nullptr, 0, 0, 0)) {
         if ((GetMessage(&msg, nullptr, 0, 0)) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            if (isGameMode) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            else if (!hDlgCurrent || !IsDialogMessage(hDlgCurrent, &msg)) {
+                if (!TranslateAccelerator(*phWinMain, hAccelerators, &msg)) {
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
+            }
         }
     }
     return 0;
@@ -752,9 +794,7 @@ void __declspec(naked) display_setup(void) {
 int CheckClientRect() {
     //check if mouse within client rect.
     RECT rcClient;
-    POINT p, m;
-    p.x = p.y = 0;
-    m.x = m.y = 0;
+    POINT p{ 0,0 }, m{ 0,0 };
 
     GetCursorPos(&m);
 
@@ -783,9 +823,7 @@ void SetRelativeMousePos() {
 
     if (!isAltMouseInput) {
         RECT rcClient;
-        POINT p, m;
-        p.x = p.y = 0;
-        m.x = m.y = 0;
+        POINT p{ 0,0 }, m{ 0,0 };
 
         GetCursorPos(&m);
         ClientToScreen(hGameWnd, &p);
@@ -974,9 +1012,7 @@ void SetMousePos(LONG xPos, LONG yPos) {
 
     LockMouseInWin(xPos, yPos);
 
-    POINT pClient;
-    LONG mouseX = 0, mouseY = 0;
-    pClient.x = pClient.y = 0;
+    POINT pClient{ 0,0 };
     ClientToScreen(hGameWnd, &pClient);
 
     xPos = (*pPointerX * scaleLevel_GUI) + pClient.x;
@@ -1086,9 +1122,7 @@ void __declspec(naked) get_pointer_state(void) {
 //______________________________________
 void SetWindowPointerPos(POINT* pointer) {
 
-    POINT p, m;
-    p.x = p.y = 0;
-    m.x = m.y = 0;
+    POINT p{ 0,0 }, m{ 0,0 };
 
     ClientToScreen(hGameWnd, &p);
     m.x = pointer->x;
@@ -1101,8 +1135,8 @@ void SetWindowPointerPos(POINT* pointer) {
 }
 
 
-//___________________________________________________________________________________
-LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
+//__________________________________________________________________________________
+LRESULT CALLBACK WinProc_Game(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 
     static bool is_cursor_hidden = true;
     switch (Message) {
@@ -1196,7 +1230,7 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
             break;
         WINDOWPOS* winpos = (WINDOWPOS*)lParam;
         if (winpos->flags & (SWP_NOSIZE)) {
-            SetWindowTitle(hwnd, "");
+            SetWindowTitle(hwnd, L"");
             return 0;
         }
         //Fallout_Debug_Info("WM_WINDOWPOSCHANGED");
@@ -1213,7 +1247,7 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
         OnScreenResize_Windows(old_SCR_WIDTH, old_SCR_HEIGHT);
         isMapperSizing = isMapperSizing_temp;
 
-        SetWindowTitle(hwnd, "");
+        SetWindowTitle(hwnd, L"");
         return 0;
     }
     case WM_SIZE: {
@@ -1243,7 +1277,7 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
         OnScreenResize_Windows(old_SCR_WIDTH, old_SCR_HEIGHT);
         isMapperSizing = isMapperSizing_temp;
 
-        SetWindowTitle(hwnd, "");
+        SetWindowTitle(hwnd, L"");
         return 0;
     }
     case WM_CLOSE: {
@@ -1262,12 +1296,14 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
         return 0;
     }
     case WM_ENTERMENULOOP://allows system menu keys to fuction
-        *p_is_winActive = FALSE;
-        SetWindowActivation(*p_is_winActive);
+        //*p_is_winActive = FALSE;
+        //SetWindowActivation(*p_is_winActive);
+        Set_WindowActive_State(FALSE);
         break;
     case WM_EXITMENULOOP:
-        *p_is_winActive = TRUE;
-        SetWindowActivation(*p_is_winActive);
+        //*p_is_winActive = TRUE;
+        //SetWindowActivation(*p_is_winActive);
+        Set_WindowActive_State(TRUE);
     break;    case WM_DISPLAYCHANGE:
         break;
     case WM_COMMAND:
@@ -1292,6 +1328,8 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
         if (HTCLIENT == ht) {
             ClipCursor(nullptr);
             SetCursor(LoadCursor(nullptr, IDC_ARROW));
+            if (!isGameMode)
+                break;
             if (!CheckClientRect()) {
                 if (!is_cursor_hidden) {
                     is_cursor_hidden = true;
@@ -1314,8 +1352,9 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
         break;
     }
     case WM_ACTIVATEAPP:
-        *p_is_winActive = wParam;
-        SetWindowActivation(*p_is_winActive);
+        //*p_is_winActive = wParam;
+        //SetWindowActivation(*p_is_winActive);
+        Set_WindowActive_State(wParam);
         return 0;
     case WM_ERASEBKGND:
         return 1;
@@ -1342,7 +1381,7 @@ LRESULT CALLBACK WinProcParent(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lP
     default:
         break;
     }
-    return DefWindowProcA(hwnd, Message, wParam, lParam);
+    return DefWindowProc(hwnd, Message, wParam, lParam);
 }
 
 
@@ -1377,9 +1416,12 @@ LRESULT CALLBACK KeyboardProcMain(int code, WPARAM wParam, LPARAM lParam) {
     case VK_CAPITAL:
     case VK_SCROLL:
         break;
-    default:
-        return 1;
+    default: {
+        if (isGameMode)
+            return 1;
+        return 0;
         break;
+    }
     }
 
     return CallNextHookEx(*keyboardHook, code, wParam, lParam);
@@ -1497,6 +1539,65 @@ void __declspec(naked) h_check_double_click(void) {
 }
 
 
+//___________________________________________________________________________
+ATOM Check_RunAsMapper_RegisterClass(HINSTANCE hinstance, LPSTR pCmdLineArgs) {
+    //Fallout_Debug_Info("pCmdLine arguments: %s", pCmdLineArgs);
+    if (strstr(pCmdLineArgs, "/mapper")) {
+        Modifications_Mapper();
+        ShowCursor(true);
+        isRunAsMapper = true;
+        isGameMode = false;
+        pWindowName = windowName_Mapper;
+        MapperMain_RegisterClass();
+    }
+
+
+    WNDCLASSEX WndClass{ 0 };
+    WndClass.cbSize = sizeof(WNDCLASSEX);
+    WndClass.style = CS_HREDRAW | CS_VREDRAW;
+    WndClass.cbClsExtra = 0;
+    WndClass.cbWndExtra = 0;
+    WndClass.lpfnWndProc = &WinProc_Game;
+    WndClass.hInstance = hinstance;
+    WndClass.hIcon = LoadIcon(hinstance, MAKEINTRESOURCE(99));
+    WndClass.hCursor = nullptr;
+    WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    WndClass.lpszMenuName = nullptr;
+    WndClass.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(99));
+    WndClass.lpszClassName = winClassName_Game;
+
+    return RegisterClassEx(&WndClass);
+}
+
+
+//_____________________________________________________________
+void __declspec(naked) check_run_as_mapper_register_class(void) {
+    __asm {
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        push ebp
+
+        push esi
+        push eax
+        call Check_RunAsMapper_RegisterClass
+        add esp, 0x8
+        and eax, 0x0000FFFF
+
+        pop ebp
+        pop edi
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+
+        ret
+    }
+}
+
+
 //_________________________
 void Modifications_Win_CH() {
     //To-Do Modifications_Win_CH
@@ -1518,7 +1619,7 @@ void Modifications_Win_CH() {
     MemWrite32(0x4CC630, 640, SCR_WIDTH);
     MemWrite32(0x4CC62B, 480, SCR_HEIGHT);
 
-    MemWrite32(0x4E6FE6, 0x4E730E, (DWORD)&WinProcParent);
+    MemWrite32(0x4E6FE6, 0x4E730E, (DWORD)&WinProc_Game);
 
 
     if (ConfigReadInt(L"OTHER_SETTINGS", L"CPU_USAGE_FIX", 0)) {
@@ -1628,6 +1729,8 @@ void Modifications_Win_MULTI() {
     phWinMain = (HWND*)FixAddress(0x51E434);
     phInstance = (HINSTANCE*)FixAddress(0x51E438);
 
+    ppCmdLineArgs = (LPSTR*)FixAddress(0x51E43C);
+
     p_is_winActive = (BOOL*)FixAddress(0x51E444);
 
     pfall_win_exit = (void*)FixAddress(0x4E660F);
@@ -1637,7 +1740,7 @@ void Modifications_Win_MULTI() {
     MemWrite32(0x4CAD6B, 640, SCR_WIDTH);
     MemWrite32(0x4CAD66, 480, SCR_HEIGHT);
 
-    MemWrite32(0x4DE802, FixAddress(0x4DE9FC), (DWORD)&WinProcParent);
+    MemWrite32(0x4DE802, FixAddress(0x4DE9FC), (DWORD)&WinProc_Game);
 
     if (ConfigReadInt(L"OTHER_SETTINGS", L"CPU_USAGE_FIX", 0)) {
         MemWrite8(0x4C9DA9, 0x53, 0xE9);
@@ -1733,6 +1836,12 @@ void Modifications_Win_MULTI() {
     FuncWrite32(0x4929CF, 0x3FF00000, (DWORD)&h_gui_scale_level_decrease);
 
 
+    //004DE7B4 | .BB 01000000   MOV EBX, 1
+    //MemWrite8(0x4DE7B4, 0xBB, 0xE8);
+    //FuncWrite32(0x4DE7B5, 0x00000001, (DWORD)&check_run_as_mapper);
+
+    //004DE73B | .E8 B4000000   CALL REGISTER_CLASS(EAX hInstance); [fallout2.REGISTER_CLASS(EAX hInstance), register_class(EAX hInstance)
+    FuncReplace32(0x4DE73C, 0x000000B4, (DWORD)&check_run_as_mapper_register_class);
 }
 
 

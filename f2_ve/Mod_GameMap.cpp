@@ -35,6 +35,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Dx_Game.h"
 #include "Dx_Windows.h"
 
+#include "mapper\mapper_tools.h"
+
 RECT rcGame_GUI;
 
 LONG game_PortalWidth=0;
@@ -62,20 +64,63 @@ DWORD* PathFindNodes01 = nullptr;
 DWORD* PathFindNodes02 = nullptr;
 
 
+//____________________________
+BOOL IsHexVisible(LONG hexPos) {
+    //Is hex tile within 5 hexes of game portal centre.
+
+    LONG hex_x = 0;
+    LONG hex_y = 0;
+
+    HexNumToHexPos(hexPos, &hex_x, &hex_y);
+
+    if (abs(*pVIEW_HEX_X - hex_x) < 5 || (abs(*pVIEW_HEX_Y - hex_y) < 5))
+        return TRUE;
+    return FALSE;
+
+}
+
+
+//_________________________________________
+void __declspec(naked) is_hex_visible(void) {
+
+    __asm {
+        push edx
+        push ebx
+        push ecx
+        push esi
+        push edi
+        push ebp
+
+        push eax
+        call IsHexVisible
+        add esp, 0x4
+
+        pop ebp
+        pop edi
+        pop esi
+        pop ecx
+        pop ebx
+        pop edx
+        ret
+    }
+}
+
+
 //________________________________________________
-void GetMousePosOnGamePortal(LONG* p_x, LONG* p_y) {
+BOOL GetMousePosOnGamePortal(LONG* p_x, LONG* p_y) {
 
     GetMousePos(p_x, p_y);
 
     xMouse_GUI = *p_x;
     yMouse_GUI = *p_y;
-    if (GetWinAtPos(*p_x, *p_y) == *pWinRef_GameArea) {
-        WinStruct* win = fall_Win_Get(*pWinRef_GameArea);
-        if (!(win->flags & FLG_WinHidden)) {
-            *p_x = (LONG)((float)*p_x / scaleGame_RO);
-            *p_y = (LONG)((float)*p_y / scaleGame_RO);
-        }
+    if (GetWinAtPos(*p_x, *p_y) != *pWinRef_GameArea)
+        return FALSE;
+    WinStruct* win = fall_Win_Get(*pWinRef_GameArea);
+    if (!(win->flags & FLG_WinHidden)) {
+        *p_x = (LONG)((float)*p_x / scaleGame_RO);
+        *p_y = (LONG)((float)*p_y / scaleGame_RO);
     }
+    return TRUE;
 }
 
 
@@ -106,21 +151,22 @@ void __declspec(naked) get_mouse_pos_on_game_portal(void) {
 
 
 //_________________________________________________
-void GetMousePosOnGameMap(LONG* pXPos, LONG* pYPos) {
+BOOL GetMousePosOnGameMap(LONG* pXPos, LONG* pYPos) {
 
     GetMousePos(pXPos, pYPos);
 
     xMouse_GUI = *pXPos;
     yMouse_GUI = *pYPos;
-    if (GetWinAtPos(*pXPos, *pYPos) == *pWinRef_GameArea) {
-        WinStruct* win = fall_Win_Get(*pWinRef_GameArea);
-        if (!(win->flags & FLG_WinHidden)) {
-            *pXPos = (LONG)((float)*pXPos / scaleGame_RO);
-            *pXPos += rcGame_PORTAL.left;
-            *pYPos = (LONG)((float)*pYPos / scaleGame_RO);
-            *pYPos += rcGame_PORTAL.top;
-        }
+    if (GetWinAtPos(*pXPos, *pYPos) != *pWinRef_GameArea)
+        return FALSE;
+    WinStruct* win = fall_Win_Get(*pWinRef_GameArea);
+    if (win && !(win->flags & FLG_WinHidden)) {
+        *pXPos = (LONG)((float)*pXPos / scaleGame_RO);
+        *pXPos += rcGame_PORTAL.left;
+        *pYPos = (LONG)((float)*pYPos / scaleGame_RO);
+        *pYPos += rcGame_PORTAL.top;
     }
+    return TRUE;
 }
 
 
@@ -148,6 +194,81 @@ void __declspec(naked) get_mouse_pos_on_game_map(void) {
         ret
     }
 }
+
+
+//for keeping the mouse hex position set to a valid hex when the mouse is out of bounds.
+//_______________________________________________
+LONG GetNearestValidHexPos(LONG xPos, LONG yPos) {
+
+    LONG xHex = 0;
+    LONG yHex = 0;
+    LONG hexPos = SqrToHexPos_GameOffset(xPos, yPos, &xHex, &yHex);
+    if (hexPos == -1) {
+        if (xHex < 0)
+            xHex = 0;
+        else if (xHex >= *pNUM_HEX_X)
+            xHex = *pNUM_HEX_X - 1;
+        if (yHex < 0)
+            yHex = 0;
+        else if (yHex >= *pNUM_HEX_Y)
+            yHex = *pNUM_HEX_Y - 1;
+
+        hexPos =  yHex * *pNUM_HEX_X + xHex;
+    }
+    return hexPos;
+}
+
+
+//____________________________________________________
+void __declspec(naked) get_nearest_valid_hexpos(void) {
+    __asm {
+        push edx
+        push ebx
+        push ecx
+        push esi
+        push edi
+        push ebp
+
+        push edx
+        push eax
+        call GetNearestValidHexPos
+        add esp, 0x8
+
+        pop ebp
+        pop edi
+        pop esi
+        pop ecx
+        pop ebx
+        pop edx
+        ret
+    }
+}
+
+
+
+//________________________________________________________________________
+void __declspec(naked) adjust_game_mouse_pos_to_nearest_valid_hexpos(void) {
+
+    __asm {
+        push ebx
+        push ecx
+        push esi
+
+        add eax, rcGame_PORTAL.left
+        add edx, rcGame_PORTAL.top
+        push edx
+        push eax
+        call GetNearestValidHexPos
+        add esp, 0x8
+
+        pop esi
+        pop ecx
+        pop ebx
+        ret
+    }
+
+}
+
 
 
 //___________________________________________________________________________
@@ -184,8 +305,9 @@ void __declspec(naked) get_mouse_pic_ref_adjust_position_on_game_portal(void) {
 //________________________________________________
 DWORD CheckMouseScrnRect(LONG mouseX, LONG mouseY) {
 
-    if (!isGameMode) {//free mouse when not in game mode.
-        ClipCursor(nullptr);
+    //if (!isGameMode && !isMapperSelecting && !isMapperScrolling) {//free mouse when not in game mode.
+    if (!isGameMode && !IsMapperScrolling()) {//free mouse when not in game mode.
+            ClipCursor(nullptr);
         return 0;
     }
 
@@ -473,7 +595,7 @@ bool GameMap_Trans(int delta) {
     return true;
 }
 
-
+/*
 //_____________________________________________
 bool GameMap_Zoom(int delta, bool focusOnMouse) {
 
@@ -485,10 +607,12 @@ bool GameMap_Zoom(int delta, bool focusOnMouse) {
     LONG yPos = 0;
 
     if (focusOnMouse) {
-        fall_Mouse_GetPos(&xPos, &yPos);
-        if (fall_Win_GetWinAtPos(xPos, yPos) == *pWinRef_GameArea)
-            GetMousePosOnGameMap(&xPos, &yPos);
-        else
+        //fall_Mouse_GetPos(&xPos, &yPos);
+        //if (GetWinAtPos(xPos, yPos) == *pWinRef_GameArea)
+        //    GetMousePosOnGameMap(&xPos, &yPos);
+        //else
+        //    return false;
+        if (!GetMousePosOnGameMap(&xPos, &yPos))
             return false;
     }
     else
@@ -496,13 +620,27 @@ bool GameMap_Zoom(int delta, bool focusOnMouse) {
 
     xPos += EDGE_OFF_X;
     yPos += EDGE_OFF_Y;
-    LONG hexPos = SqrToHexNum_GameOffset(xPos, yPos);
 
+    LONG hex_x = 0;
+    LONG hex_y = 0;
+    LONG hexPos = SqrToHexPos_GameOffset(xPos, yPos, &hex_x, &hex_y);
+    if (hexPos == -1) {
+        if (xPos < 0)
+            xPos = 0;
+        else if (xPos >= *pNUM_HEX_X)
+            xPos = *pNUM_HEX_X - 1;
+        if (yPos < 0)
+            yPos = 0;
+        else if (yPos >= *pNUM_HEX_Y)
+            yPos = *pNUM_HEX_Y - 1;
+
+        hexPos = yPos * *pNUM_HEX_X + xPos;
+    }
+  
     if (!isHexWithinMapEdges(hexPos) && isGameMode)
         return true;
 
     SetViewPosition_Hex(hexPos, 0x0);
-
     if (delta > 0) {
         scaleLevel_Game++;
         if (scaleLevel_Game < scaleLevel_GUI)
@@ -557,6 +695,86 @@ bool GameMap_Zoom(int delta, bool focusOnMouse) {
         yPos = (game_PortalHeight >> 1) - ((yView - yPos) * 12);
 
         SetMousePosGame(xPos, yPos);
+    }
+    return true;
+}
+*/
+
+//_____________________________________________
+bool GameMap_Zoom(int delta, bool focusOnMouse) {
+
+    WinStruct* win = fall_Win_Get(*pWinRef_GameArea);
+    if (!win)
+        return false;
+
+    LONG sqr_x = 0;
+    LONG sqr_y = 0;
+
+    if (focusOnMouse) {
+        if (!GetMousePosOnGameMap(&sqr_x, &sqr_y))
+            return false;
+    }
+    else
+        HexNumToSqr(*pVIEW_HEXPOS, &sqr_x, &sqr_y);
+
+    LONG hex_x = 0;
+    LONG hex_y = 0;
+    SqrToHexPos_GameOffset(sqr_x, sqr_y, &hex_x, &hex_y);
+
+    if (!isHexWithinMapEdges(hex_x, hex_y) && isGameMode)
+        return true;
+
+    SetViewPosition_Hex_Unbound(hex_x, hex_y, 0x0);
+    if (delta > 0) {
+        scaleLevel_Game++;
+        if (scaleLevel_Game < scaleLevel_GUI)
+            scaleGame_RO = scaleLevel_Game * scaleSubUnit;
+        else
+            scaleGame_RO = (float)scaleLevel_Game - scaleLevel_GUI + 1;
+
+
+        if ((float)win->width / scaleGame_RO < 128.0f) {
+            scaleLevel_Game--;
+            if (scaleLevel_Game < scaleLevel_GUI)
+                scaleGame_RO = scaleLevel_Game * scaleSubUnit;
+            else
+                scaleGame_RO = (float)scaleLevel_Game - scaleLevel_GUI + 1;
+        }
+    }
+    else if (delta < 0) {
+        if (scaleLevel_Game > 1) {
+            scaleLevel_Game--;
+            if (scaleLevel_Game < scaleLevel_GUI)
+                scaleGame_RO = scaleLevel_Game * scaleSubUnit;
+            else
+                scaleGame_RO = (float)scaleLevel_Game - scaleLevel_GUI + 1;
+        }
+        else if (scaleLevel_Game == 1) {
+            float widthRO = 1.0f;
+            float heightRO = 1.0f;
+            GAME_AREA* pGameArea = GameAreas_GetCurrentArea();
+            if (pGameArea) {
+                widthRO = ((float)game_PortalWidth / (float)pGameArea->width) / scaleLevel_GUI;
+                heightRO = ((float)game_PortalHeight / (float)pGameArea->height) / scaleLevel_GUI;
+            }
+            if (widthRO < scaleGame_RO || heightRO < scaleGame_RO) {
+                scaleLevel_Game = 0;
+                if (widthRO < heightRO)
+                    scaleGame_RO = widthRO;
+                else
+                    scaleGame_RO = heightRO;
+            }
+        }
+    }
+
+    ResizeGameWin();
+    SetViewPosition_Hex_Unbound(hex_x, hex_y, 0x0);
+
+    if (focusOnMouse) {
+        HexToSqr(hex_x, hex_y, &sqr_x, &sqr_y);
+        sqr_x -= rcGame_PORTAL.left;
+        sqr_y -= rcGame_PORTAL.top;
+        SetMousePosGame(sqr_x, sqr_y);
     }
     return true;
 }
@@ -1825,8 +2043,15 @@ void Modifications_Game_Map_MULTI() {
     MemWrite8(0x4B1674, 0x56, 0xE9);
     FuncWrite32(0x4B1675, 0xC6895557, (DWORD)&hex_to_sqr);
 
+
+    //keep the mouse hex position set to a valid hex when the mouse is out of bounds (when drawing).
+    FuncReplace32(0x44DFD7, 0x00063779, (DWORD)&get_nearest_valid_hexpos);
+    FuncReplace32(0x44E229, 0x00063527, (DWORD)&get_nearest_valid_hexpos);
+
+
     FuncReplace32(0x412ABF, 0x09EC91, (DWORD)&adjust_game_mouse_pos);
-    FuncReplace32(0x418022, 0x09972E, (DWORD)&adjust_game_mouse_pos);
+    //keep the mouse hex position set to a valid hex when the mouse is out of bounds (when clicking).
+    FuncReplace32(0x418022, 0x09972E, (DWORD)&adjust_game_mouse_pos_to_nearest_valid_hexpos);
 
     MemWrite16(0x44DF9D, 0xC589, 0xE890);
     FuncWrite32(0x44DF9F, 0xDE89D789, (DWORD)&adjust_game_mouse_pos2);
@@ -1965,6 +2190,16 @@ void Modifications_Game_Map_MULTI() {
     if (FOG_OF_WAR)
         MemWrite8(0x48C7A0, 0x53, 0xC3);
 
+
+
+    //is_hex_visible
+    //CPU Disasm
+    //0045404C / $  53            PUSH EBX; is_hex_visible(EAX hexNum) is hex with - in a box 320x240 around view centre hex
+    //0045404D | .  51            PUSH ECX
+    //0045404E | .  52            PUSH EDX
+    //0045404F | .  8B1D 34BE6600 MOV EBX, DWORD PTR DS : [view_hexPos] ; used to check hex vis
+    MemWrite16(0x45404C, 0x5153, 0xE890);
+    FuncWrite32(0x45404E, 0x341D8B52, (DWORD)&is_hex_visible);
 }
 
 

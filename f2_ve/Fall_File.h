@@ -51,6 +51,7 @@ int fall_fseek(void *FileStream, LONG fOffset, LONG origin);
 LONG fall_ftell(void* FileStream);
 
 int fall_fgetc(void* FileStream);
+char* fall_fgets(char* string, int num, void* FileStream);
 int fall_fread(void* buffer, size_t size, size_t num, void* FileStream);
 int fall_fputc(int ch, void* FileStream);
 int fall_fwrite(void* buffer, size_t size, size_t num, void* FileStream);

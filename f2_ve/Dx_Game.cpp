@@ -30,6 +30,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Dx_Mouse.h"
 
 #include "win_fall.h"
+#include "mapper\win_Mapper.h"
+#include "mapper\mapper_tools.h"
 #include "modifications.h"
 #include "memwrite.h"
 #include "game_map.h"
@@ -71,8 +73,15 @@ bool isLoadingMapData=false;
 //pointer to function that loads map data
 //void *pfall_load_map_data = nullptr;
 
-GAME_AREA* pGameArea[3] = { nullptr,nullptr,nullptr };
+
+FRMtile_Map* pTilesDx = nullptr;
+
+
+GAME_AREA* pGameArea_Main[3] = { nullptr,nullptr,nullptr };
 GAME_AREA* pGameArea_Current = nullptr;
+
+//mapper game area
+GAME_AREA* pGameArea_Mapper[3] = { nullptr,nullptr,nullptr };
 
 OBJlight* objLight[3] = { nullptr, nullptr, nullptr };
 
@@ -98,10 +107,230 @@ int mapLight_SkipReset = 0;
 bool mapLightChange = false;
 bool mapLight_recreateRenderTardets = false;
 
-float ambientLightIntensity_old = 0;
-
 FRMdx* mouseInfoframeDx = nullptr;
 FRMdx* mouseInfoframeDx_Hit = nullptr;
+
+ID3D11Buffer* pd3dVB_tileLimit_rect[3]{ nullptr, nullptr, nullptr };
+
+ID3D11Buffer* pd3dVB_selecting_rect = nullptr;
+
+
+//_________________________________
+ID3D11Buffer* SelectingRectVB_Get() {
+    return pd3dVB_selecting_rect;
+}
+
+
+//____________________________
+void SelectingRectVB_Destroy() {
+    if (pd3dVB_selecting_rect)
+        pd3dVB_selecting_rect->Release();
+    pd3dVB_selecting_rect = nullptr;
+}
+
+
+//________________________________________________________
+bool SelectingRectVB_Set(POINT* p_squ_p1, POINT* p_squ_p2) {
+
+    SelectingRectVB_Destroy();
+
+    ID3D11Device* pD3DDev = GetD3dDevice();
+    if (pD3DDev == nullptr)
+        return false;
+
+    POINT squ_ori_1{ p_squ_p1->x + 4800,  p_squ_p1->y };
+    POINT squ_ori_2{ p_squ_p2->x + 4800,  p_squ_p2->y };
+    POINT squ_alt_1{};
+    POINT squ_alt_2{};
+
+    SEL_RC_TYPE rectType = Get_SelectionRectType();
+
+    if (rectType == SEL_RC_TYPE::square) {
+        //create a rightangled rect
+
+        //arrange the points so that the line strip displays correctly.
+        POINT temp{ squ_ori_1.x, squ_ori_1.y };
+        if (squ_ori_1.x > squ_ori_2.x) {
+            squ_ori_1.x = squ_ori_2.x;
+            squ_ori_2.x = temp.x;
+        }
+        if (squ_ori_1.y > squ_ori_2.y) {
+            squ_ori_1.y = squ_ori_2.y;
+            squ_ori_2.y = temp.y;
+        }
+        squ_alt_1 = { squ_ori_1.x, squ_ori_2.y };
+        squ_alt_2 = { squ_ori_2.x, squ_ori_1.y };
+        return CreateQuadrilateralVB_LineStrip(pD3DDev, &squ_alt_1, &squ_ori_1, &squ_alt_2, &squ_ori_2, &pd3dVB_selecting_rect);
+    }
+    else if (rectType == SEL_RC_TYPE::isometric) {
+        //create an isometric rect 
+
+        //convert the two square points to isometric space
+        POINT iso_p1{};
+        SqrToIso(squ_ori_1.x, squ_ori_1.y, &iso_p1.x, &iso_p1.y);
+        POINT iso_p2{};
+        SqrToIso(squ_ori_2.x, squ_ori_2.y, &iso_p2.x, &iso_p2.y);
+
+
+        //use the iso coordinates of the first two points to find the other two points of the rectangle in square space.
+        IsoToSqr(iso_p1.x, iso_p2.y, &squ_alt_1.x, &squ_alt_1.y);
+
+        IsoToSqr(iso_p2.x, iso_p1.y, &squ_alt_2.x, &squ_alt_2.y);
+
+        POINT* p_lb = nullptr;
+        POINT* p_rt = nullptr;
+        POINT* p_rb = nullptr;
+        POINT* p_lt = nullptr;
+
+        //arrange the points so that the line strip displays correctly.
+        if (iso_p1.x < iso_p2.x) {
+            if (iso_p1.y < iso_p2.y) {
+                p_lb = &squ_ori_2;
+                p_lt = &squ_alt_2;
+                p_rt = &squ_ori_1;
+                p_rb = &squ_alt_1;
+            }
+            else {
+                p_lb = &squ_alt_2;
+                p_lt = &squ_ori_2;
+                p_rt = &squ_alt_1;
+                p_rb = &squ_ori_1;
+            }
+        }
+        else {
+            if (iso_p1.y < iso_p2.y) {
+                p_lb = &squ_alt_1;
+                p_lt = &squ_ori_1;
+                p_rt = &squ_alt_2;
+                p_rb = &squ_ori_2;
+            }
+            else {
+                p_lb = &squ_ori_1;
+                p_lt = &squ_alt_1;
+                p_rt = &squ_ori_2;
+                p_rb = &squ_alt_2;
+            }
+        }
+        return CreateQuadrilateralVB_LineStrip(pD3DDev, p_lb, p_lt, p_rt, p_rb, &pd3dVB_selecting_rect);
+    }
+    return false;
+}
+
+
+//___________________________________________
+ID3D11Buffer* TileLimitsRectVB_Get(int level) {
+
+    return pd3dVB_tileLimit_rect[level];
+}
+
+
+//_____________________________
+void TileLimitsRectVB_Destroy() {
+    for (int level = 0; level < 3; level++) {
+        if (pd3dVB_tileLimit_rect[level])
+            pd3dVB_tileLimit_rect[level]->Release();
+        pd3dVB_tileLimit_rect[level] = nullptr;
+    }
+}
+
+
+//_________________________
+bool TileLimitsRectVB_Set() {
+   
+    TileLimitsRectVB_Destroy();
+    ID3D11Device* pD3DDev = GetD3dDevice();
+    if (pD3DDev == nullptr)
+        return false;
+
+    GAME_AREA* pArea_Game = nullptr;
+    bool retVal = true;
+    for (int level = 0; level < 3; level++) {
+        pArea_Game = pGameArea_Main[level];
+        if (pArea_Game) {
+
+            POINT lb{ 0,0 };
+            TileToSqr(pArea_Game->tileLimits.left, pArea_Game->tileLimits.bottom, &lb.x, &lb.y);
+            lb.x -= 16;
+            lb.y -= 12;
+            POINT lt{ 0,0 };
+            TileToSqr(pArea_Game->tileLimits.left, pArea_Game->tileLimits.top, &lt.x, &lt.y);
+            lt.x -= 16;
+            lt.y -= 12;
+            POINT rt{ 0,0 };
+            TileToSqr(pArea_Game->tileLimits.right, pArea_Game->tileLimits.top, &rt.x, &rt.y);
+            rt.x -= 16;
+            rt.y -= 12;
+            POINT rb{ 0,0 };
+            TileToSqr(pArea_Game->tileLimits.right, pArea_Game->tileLimits.bottom, &rb.x, &rb.y);
+            rb.x -= 16;
+            rb.y -= 12;
+
+            lb.x += 4800;
+            rt.x += 4800;
+            rb.x += 4800;
+            lt.x += 4800;
+
+            //lb.x = 3200;
+            //lb.y = 3600;
+            //rt.x = 4800;
+            //rt.y = 0;
+            //rb.x = 8000;
+            //rb.y = 2400;
+            //lt.x = 0;
+            //lt.y = 1200;
+            if (!CreateQuadrilateralVB_LineStrip(pD3DDev, &lb, &lt, &rt, &rb, &pd3dVB_tileLimit_rect[level]))
+                retVal = false;
+        }
+    }
+    return retVal;
+}
+
+
+//________________________
+void GameMap_Tiles_Reset() {
+    if (!pTilesDx)
+        pTilesDx = new FRMtile_Map();
+    pTilesDx->Reset_Map();
+}
+
+
+//________________________________________________________________
+DWORD GameMap_GetTile_Flags(LONG tileNum, LONG level, BOOL isRoof) {
+    if (!pTilesDx)
+        GameMap_Tiles_Reset();
+    if(isRoof)
+        return pTilesDx->GetRoofTile_Flags(tileNum, level);
+    return pTilesDx->GetFloorTile_Flags(tileNum, level);
+}
+
+
+//___________________________________________________________________________
+void GameMap_SetTile_Flags(LONG tileNum, LONG level, BOOL isRoof, DWORD flags) {
+    if (!pTilesDx)
+        GameMap_Tiles_Reset();
+    if (isRoof)
+        pTilesDx->SetRoofTile_Flags(tileNum, level, flags);
+    else
+        pTilesDx->SetFloorTile_Flags(tileNum, level, flags);
+}
+
+
+//_____________________________________________________________________
+FRMframeDx* GameMap_GetTile_Frame(LONG tileNum, LONG level, BOOL isRoof) {
+    if (!pTilesDx)
+        GameMap_Tiles_Reset();
+    if (isRoof)
+        return pTilesDx->GetRoofTile_Frame(tileNum, level);
+    return pTilesDx->GetFloorTile_Frame(tileNum, level);
+}
+
+
+//__________________________________
+GAME_AREA* GameAreas_Get(LONG level) {
+    if (level < 0 || level>3)
+        return nullptr;
+    return pGameArea_Main[level];
+}
 
 
 //___________________________________________________
@@ -152,6 +381,7 @@ void BeforeLoadMapData(const char* mapName) {
 //_____________________
 void AfterLoadMapData() {
     GameAreas_Load_Tiles();
+    GameAreas_Load_Mapper();
 }
 
 
@@ -232,9 +462,9 @@ void MapLight(OBJStruct* pObj, LONG subLight) {
             light_colour = VE_PROTO_Get_Light_Colour(pPro);
         }
         if (light_colour) {
-            lightColour.x = (float)((light_colour & 0xFF000000) >> 24) / 256.0f;
-            lightColour.y = (float)((light_colour & 0x00FF0000) >> 16) / 256.0f;
-            lightColour.z = (float)((light_colour & 0x0000FF00) >> 8) / 256.0f;
+            lightColour.x = (float)((light_colour & 0xFF000000) >> 24) / 255.0f;
+            lightColour.y = (float)((light_colour & 0x00FF0000) >> 16) / 255.0f;
+            lightColour.z = (float)((light_colour & 0x0000FF00) >> 8) / 255.0f;
         }
     }
 
@@ -246,7 +476,7 @@ void MapLight(OBJStruct* pObj, LONG subLight) {
         max_component_intensity = lightColour.z;
     if (max_component_intensity == 0)
         lightColour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    else {
+    else if (max_component_intensity < 1.0f) {
         lightColour.x /= max_component_intensity;
         lightColour.y /= max_component_intensity;
         lightColour.z /= max_component_intensity;
@@ -260,7 +490,8 @@ void MapLight(OBJStruct* pObj, LONG subLight) {
 
     bool addLight = true;
     if (subLight)
-        return;
+        addLight = false;
+        //return;
 
     if (pObj->light_intensity <= 0)
         return;
@@ -498,6 +729,107 @@ bool CheckWallPosition_2(LONG hexNum_1, LONG hexNum_2) {
 }
 
 
+//______________________________________________________
+void DrawMouseObjDx_Selected(float scaleX, float scaleY) {
+    ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
+    if (pD3DDevContext == nullptr)
+        return;
+    OBJStructDx* pObjDx = ((OBJStructDx*)*ppObj_Selected);
+    if (!pObjDx)
+        return;
+    DWORD fID = pObjDx->frmID;
+    if (fID == 0x06000000 || fID == 0x06000001)
+        return;
+    //Fallout_Debug_Info("DrawMouseObjDx_Selected %X", fID);
+    LONG artType = ((0x0F000000 & fID) >> 24);
+    if (!IsArtTypeEnabled(artType))
+        return;
+
+    LONG xPos = 0;
+    LONG yPos = 0;
+    if (pObjDx->hexNum != -1) {
+        HexNumToSqr(pObjDx->hexNum, &xPos, &yPos);
+
+        xPos -= 1;
+        yPos -= 1;
+        xPos += pObjDx->xShift;
+        yPos += pObjDx->yShift;
+
+    }
+    if (!pObjDx->frmObjDx)
+        pObjDx->frmObjDx = new FRMobj(*ppObj_Selected, true);
+
+    FRMframeDx* pFrame = pObjDx->frmObjDx->GetFrame();
+    if (pFrame == nullptr)
+        return;
+
+    xPos -= rcGame_PORTAL.left;
+    yPos -= rcGame_PORTAL.top;
+    xPos += pFrame->GetOffset_OriCentre_X();
+    yPos += pFrame->GetOffset_OriCentre_Y();
+
+    MATRIX_DATA posData;
+    XMMATRIX xmManipulation;
+    XMMATRIX xmScaling;
+
+    xmManipulation = DirectX::XMMatrixTranslation((float)xPos * scaleX, (float)yPos * scaleY, 0.0f);
+    xmScaling = DirectX::XMMatrixScaling(scaleX, scaleY, 1.0f);
+    posData.World = XMMatrixMultiply(xmScaling, xmManipulation);
+    XMMATRIX* pOrtho2D_SCRN = GetScreenProjectionMatrix_XM();
+    posData.WorldViewProjection = XMMatrixMultiply(posData.World, *pOrtho2D_SCRN);
+
+    pPS_BuffersFallout->UpdatePositionBuff(&posData);
+
+    XMFLOAT2 pal_colour = { 0.0f, 0.0f };
+    if (pObjDx->combatFlags & FLG_NonPCTeamMem)
+        pal_colour = { (float)PAL_OUTLINE_NOT_TEAM / 256.0f, 1.0f };
+    else if (pObjDx->combatFlags & FLG_MouseHex)
+        pal_colour = { (float)PAL_OUTLINE_MOUSE / 256.0f, 0.3f };
+    else if (pObjDx->combatFlags & FLG_combatUnk0x04)
+        pal_colour = { (float)PAL_OUTLINE_UNKNOWN04 / 256.0f, 1.0f };
+    else if (pObjDx->combatFlags & FLG_PCTeamMem)
+        pal_colour = { (float)PAL_OUTLINE_TEAM / 256.0f, 1.0f };
+    else if (pObjDx->combatFlags & FLG_ItemUnderMouse)
+        pal_colour = { (float)PAL_OUTLINE_ITEM_UNDER_MOUSE / 256.0f, 1.0f };
+    else if (pObjDx->combatFlags & FLG_NotVisByPC)
+        pal_colour = { (float)PAL_OUTLINE_NOT_VISIBLE / 256.0f, 1.0f };
+    else
+        pal_colour = { (float)PAL_OUTLINE_OTHER / 256.0f, 1.0f };
+
+
+    pFrame->GetTexturePixelSize(&objData.PixelData.x, &objData.PixelData.y);
+    objData.PalEffects.x = pal_colour.x;
+    objData.PalEffects.y = pal_colour.y;
+
+    pPS_BuffersFallout->UpdateObjBuff(&objData);
+
+    //set vertex stuff
+    UINT stride = sizeof(VERTEX_BASE);
+    UINT offset = 0;
+    ID3D11Buffer* frame_pd3dVB = nullptr;
+    pFrame->GetVertexBuffer(&frame_pd3dVB);
+    pD3DDevContext->IASetVertexBuffers(0, 1, &frame_pd3dVB, &stride, &offset);
+
+    pPS_BuffersFallout->SetPositionRender();
+
+    ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetShaderResourceView();
+    UINT frame_pixelWidth = pFrame->GetPixelWidth();
+
+    //set pixel shader stuff
+    if (frame_pixelWidth == 1)
+        pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_8, nullptr, 0);
+    else
+        pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_32, nullptr, 0);
+
+    //set texture stuff
+    pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
+    pD3DDevContext->DrawIndexed(4, 0, 0);
+
+    pFrame = nullptr;
+    pObjDx = nullptr;
+}
+
+
 //__________________________________________________________
 void DrawMouseObjDx(float scaleX, float scaleY, LONG layer) {
     ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
@@ -618,6 +950,7 @@ void DrawMouseObjDx(float scaleX, float scaleY, LONG layer) {
             pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
             pD3DDevContext->DrawIndexed(4, 0, 0);
         }
+        DrawMouseObjDx_Selected(scaleX, scaleY);
     }
     pFrame = nullptr;
     pObjDx = nullptr;
@@ -1788,14 +2121,26 @@ int tilenodes_deleted = 0;//debug counter
 
 //______________________
 void GameAreas_Destroy() {
+
     for (int level = 0; level < 3; level++) {
-        if (pGameArea[level])
-            delete pGameArea[level];
-        pGameArea[level] = nullptr;
+        if (pGameArea_Mapper[level])
+            delete pGameArea_Mapper[level];
+        pGameArea_Mapper[level] = nullptr;
+
+        if (pGameArea_Main[level])
+            delete pGameArea_Main[level];
+        pGameArea_Main[level] = nullptr;
     }
     pGameArea_Current = nullptr;
 
     GameAreas_FadingObjects_delete();
+
+    if (pTilesDx)
+        delete pTilesDx;
+
+    //destroy mapper stuff
+    SelectingRectVB_Destroy();
+    TileLimitsRectVB_Destroy();
 }
 
 
@@ -1819,12 +2164,13 @@ void DrawRoof(TILE_AREA_Node* pRoof) {
 
     TILEnode* pTile = pRoof->tiles;
     while (pTile) {
-        if (!pTile->pFrm) {
+        //if (!pTile->pFrm) {
             //imonitorInsertText("no frm for roof tile");
-            pTile = pTile->next;
-            continue;
-        }
-        pFrame = pTile->pFrm->GetFrame(pTile->frmID, 0, 0);
+        //    pTile = pTile->next;
+        //    continue;
+        //}
+        //pFrame = pTile->pFrm->SetFrm(pTile->frmID, 0, 0);
+        pFrame = GameMap_GetTile_Frame(pTile->tileNum, *pMAP_LEVEL, TRUE);
         if (pFrame == nullptr) {
             // imonitorInsertText("no frame for roof tile");
             pTile = pTile->next;
@@ -1871,9 +2217,9 @@ bool GameArea_CheckRoofTile(int tileX, int tileY, int level, int areaNum, GAME_A
         return false;
     if (tileY < 0 || tileY >= *pNUM_TILE_Y)
         return false;
-    if (tileX < pGameArea->tileLimits.west || tileX >= pGameArea->tileLimits.east)
+    if (tileX < pGameArea->tileLimits.right + 2 || tileX >= pGameArea->tileLimits.left + 2)
         return false;
-    if (tileY < pGameArea->tileLimits.north || tileY >= pGameArea->tileLimits.south)
+    if (tileY < pGameArea->tileLimits.top + 3 || tileY >= pGameArea->tileLimits.bottom + 3)
         return false;
 
     LONG tilePosNum = tileX + (tileY * *pNUM_TILE_X);
@@ -1884,14 +2230,16 @@ bool GameArea_CheckRoofTile(int tileX, int tileY, int level, int areaNum, GAME_A
     if (pMarkedTile[tilePosNum])
         return false;
 
-    DWORD** levelOffset = *pMapTileLevelOffset;
-    LONG tileLstNum = levelOffset[level][tilePosNum];
-    LONG tileFlag = 0;
+    //DWORD** levelOffset = *pMapTileLevelOffset;
+    //LONG tileLstNum = levelOffset[level][tilePosNum];
+    //LONG tileLstNum = GameMap_GetTileData(tilePosNum, level);
+    DWORD frmID = GameMap_GetTileFrmID(tilePosNum, level, TRUE, nullptr);
+    //LONG tileFlag = 0;
 
-    tileFlag = (tileLstNum & 0xF0000000) >> 28;
-    tileLstNum = (tileLstNum & 0x0FFF0000) >> 16;
+    //tileFlag = (tileLstNum & 0xF0000000) >> 28;
+    //tileLstNum = (tileLstNum & 0x0FFF0000) >> 16;
 
-    if (tileLstNum == 1)
+    if ((frmID & 0x00FFFFFF) == 1)
         return false;
 
     tilecount++;//debug counter
@@ -1912,9 +2260,10 @@ bool GameArea_CheckRoofTile(int tileX, int tileY, int level, int areaNum, GAME_A
         thisTile = thisTile->next;
     }
     thisTile->tileNum = tilePosNum;
-    thisTile->frmID = 0x04000000 | tileLstNum;
-    thisTile->pFrm = new FRMtile(thisTile->frmID, 0);
-    pFrame = thisTile->pFrm->GetFrame(thisTile->frmID, 0, 0);
+    //thisTile->frmID = 0x04000000 | tileLstNum;
+    //thisTile->pFrm = new FRMtile(thisTile->frmID);
+    //pFrame = thisTile->pFrm->SetFrm(thisTile->frmID, 0, 0);
+    pFrame = GameMap_GetTile_Frame(thisTile->tileNum, level, TRUE);
     thisTile->next = nullptr;
     LONG xPos = 0, yPos = 0;
     TileToSqr(tilePosNum, &xPos, &yPos);
@@ -2082,9 +2431,10 @@ void GameArea_CreateRoofList(GAME_AREA* pGameArea, int level) {
     if (!pGameArea)
         return;
 
-    DWORD** levelOffset = *pMapTileLevelOffset;
-    LONG tileLstNum = 0;
-    LONG tileFlag = 0;
+    //DWORD** levelOffset = *pMapTileLevelOffset;
+    DWORD frmID = 0;
+    //LONG tileLstNum = 0;
+    //LONG tileFlag = 0;
     int tileY = 0, tileX = 0;
     int roofNum = 0;
 
@@ -2102,23 +2452,13 @@ void GameArea_CreateRoofList(GAME_AREA* pGameArea, int level) {
     tilecount = 0;
     roofNum = 0;
 
-    int yTileLine = pGameArea->tileLimits.north * *pNUM_TILE_X;
-    for (int yTile = pGameArea->tileLimits.north; yTile < pGameArea->tileLimits.south; yTile++) {
-        for (int xTile = pGameArea->tileLimits.west; xTile < pGameArea->tileLimits.east; xTile++) {
+    int yTileLine = pGameArea->tileLimits.top * *pNUM_TILE_X;
+    for (int yTile = pGameArea->tileLimits.top; yTile < pGameArea->tileLimits.bottom; yTile++) {
+        for (int xTile = pGameArea->tileLimits.right; xTile < pGameArea->tileLimits.left; xTile++) {
 
-            tileLstNum = levelOffset[level][yTileLine + xTile];
+            frmID = GameMap_GetTileFrmID(yTileLine + xTile, level, TRUE, nullptr);
 
-            if (SFALL_MoreTiles) {
-                tileFlag = (tileLstNum & 0xC0000000) >> 30;
-                tileLstNum = tileLstNum & 0x3FFF0000 >> 16;
-            }
-            else {
-                tileFlag = (tileLstNum & 0xF0000000) >> 28;
-                tileLstNum = (tileLstNum & 0x0FFF0000) >> 16;
-            }
-
-
-            if (tileLstNum != 1 && pGameArea->pMarkedRoofTile[yTileLine + xTile] == 0) {
+            if ((frmID & 0x00FFFFFF) != 1 && pGameArea->pMarkedRoofTile[yTileLine + xTile] == 0) {
                 roofNum++;
                 if (pGameArea->rooves == nullptr) {
                     pGameArea->rooves = new TILE_AREA_Node;
@@ -2134,12 +2474,6 @@ void GameArea_CreateRoofList(GAME_AREA* pGameArea, int level) {
         }
         yTileLine += *pNUM_TILE_X;
     }
-
-    //char msg[128];
-    //sprintf_s(msg, 128, "num roof tiles = %d, deleted = %d", tilecount, tilenodes_deleted);
-    //imonitorInsertText(msg);
-    //sprintf_s(msg, 128, "level %d num rooves = %d", level, roofNum);
-    //imonitorInsertText(msg);
 }
 
 
@@ -2187,10 +2521,133 @@ void GameArea_DisplayRooves(GAME_AREA* pGameArea, float scaleX, float scaleY) {
 
             pThisRoof->renderTarget->SetScale(scaleX, scaleY);
             pThisRoof->renderTarget->SetPosition((float)(pThisRoof->rect.left - rcGame_PORTAL.left), (float)(pThisRoof->rect.top - rcGame_PORTAL.top));
-            pThisRoof->renderTarget->Display(pd3d_PS_RenderRoof32, nullptr);
+            if(*pAreRoovesVisible)
+                pThisRoof->renderTarget->Display(pd3d_PS_RenderRoof32, nullptr);
         }
         pThisRoof = pThisRoof->next;
     }
+}
+
+
+
+//_______________________________________________________________________________________
+void GameArea_DrawRoofRect_Mapper(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD flags) {
+    if (isGameMode)
+        return;
+    if (!pArea)
+        return;
+
+    TILE_AREA_Node* pThisRoof = pArea->rooves;
+    if (!pRect)
+        return;
+
+    //Fallout_Debug_Info("GGameArea_DrawRoofRect_Mapper");
+    ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
+    if (pD3DDevContext == nullptr)
+        return;
+    LONG xPos = 0, yPos = 0;
+    while (pThisRoof) {
+
+        if (pRect->right < 0 || pRect->left >(LONG)pThisRoof->width || pRect->bottom < 0 || pRect->top >(LONG)pThisRoof->height) {
+            return;
+        }
+        unique_ptr<STORED_VIEW> store_view(new STORED_VIEW(true));
+
+        if (flags & FLG_Roof && pThisRoof->renderTarget) {
+            XMFLOAT4 clearColour = { 0.0f,0.0f,0.0f,0.0f };
+            pThisRoof->renderTarget->ClearRect(clearColour, pRect);
+        }
+
+        FRMframeDx* pFrame = nullptr;
+        DWORD frmID = 0;
+        TILEnode* pTile = pThisRoof->tiles;
+        while (pTile) {
+            frmID = GameMap_GetTileFrmID(pTile->tileNum, level, TRUE, nullptr);
+            if ((frmID & 0x00FFFFFF) == 1) {
+                pTile = pTile->next;
+                continue;
+            }
+
+            pFrame = GameMap_GetTile_Frame(pTile->tileNum, level, TRUE);
+            if (pFrame == nullptr) {
+                pTile = pTile->next;
+                continue;
+            }
+
+            DWORD frame_width = pFrame->GetWidth();
+            DWORD frame_height = pFrame->GetHeight();
+
+            xPos = pTile->x - pThisRoof->rect.left;
+            yPos = pTile->y - pThisRoof->rect.top;
+
+            if (xPos > pRect->right || xPos + (int)frame_width < pRect->left || yPos > pRect->bottom || yPos + (int)frame_height < pRect->top) {
+                pTile = pTile->next;
+                continue;
+            }
+            ID3D11Buffer* frame_pd3dVB = nullptr;
+            pFrame->GetVertexBuffer(&frame_pd3dVB);
+            //set vertex stuff
+            UINT stride = sizeof(VERTEX_BASE);
+            UINT offset = 0;
+            pD3DDevContext->IASetVertexBuffers(0, 1, &frame_pd3dVB, &stride, &offset);
+            //set texture stuff
+            ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetShaderResourceView();
+            pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
+
+            if (flags & FLG_Roof) {
+                //set pixel shader stuff
+                if (pFrame->GetPixelWidth() == 1) {
+                    pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_8, nullptr, 0);
+                }
+                else {
+                    pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_32, nullptr, 0);
+                }
+                if (pThisRoof->renderTarget)
+                    pThisRoof->renderTarget->DrawIndexed(4, 0, 0, nullptr, (float)xPos, (float)yPos, frame_width, frame_height, pRect);
+            }
+            //if (pArea->pHud_RT_Outline && (flags & FLG_Hud_Outline) && (pTile->pFrm->combatFlags & FLG_IsOutlined)) {
+            DWORD combatFlags = GameMap_GetTile_Flags(pTile->tileNum, level, TRUE);
+            if (pArea->pHud_RT_Outline && (flags & FLG_Hud_Outline) && (combatFlags & FLG_IsOutlined)) {
+
+                pFrame->GetTexturePixelSize(&objData.PixelData.x, &objData.PixelData.y);
+
+                XMFLOAT2 pal_colour = { 0.0f, 0.0f };
+                if (combatFlags & FLG_NonPCTeamMem)
+                    pal_colour = { (float)PAL_OUTLINE_NOT_TEAM / 256.0f, 1.0f };
+                else if (combatFlags & FLG_MouseHex)
+                    pal_colour = { (float)PAL_OUTLINE_MOUSE / 256.0f, 0.6f };
+                else if (combatFlags & FLG_combatUnk0x04)
+                    pal_colour = { (float)PAL_OUTLINE_UNKNOWN04 / 256.0f, 1.0f };
+                else if (combatFlags & FLG_PCTeamMem)
+                    pal_colour = { (float)PAL_OUTLINE_TEAM / 256.0f, 1.0f };
+                else if (combatFlags & FLG_ItemUnderMouse)
+                    pal_colour = { (float)PAL_OUTLINE_ITEM_UNDER_MOUSE / 256.0f, 1.0f };
+                else if (combatFlags & FLG_NotVisByPC)
+                    pal_colour = { (float)PAL_OUTLINE_NOT_VISIBLE / 256.0f, 1.0f };
+                else
+                    pal_colour = { (float)PAL_OUTLINE_OTHER / 256.0f, 1.0f };
+
+                objData.PalEffects.x = pal_colour.x;
+                objData.PalEffects.y = pal_colour.y;
+                pPS_BuffersFallout->UpdateObjBuff(&objData);
+
+                //set pixel shader
+                if (pFrame->GetPixelWidth() == 1)
+                    pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge8, nullptr, 0);
+                else
+                    pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge32, nullptr, 0);
+
+                RECT rcHud = { pRect->left - rcGame_PORTAL.left + pArea->rect.left, pRect->top - rcGame_PORTAL.top + pArea->rect.top, pRect->right - rcGame_PORTAL.left + pArea->rect.left,  pRect->bottom - rcGame_PORTAL.top + pArea->rect.top };
+                pArea->pHud_RT_Outline->DrawIndexed(4, 0, 0, nullptr, (float)xPos - rcGame_PORTAL.left + pArea->rect.left, (float)yPos - rcGame_PORTAL.top + pArea->rect.top, frame_width, frame_height, &rcHud);
+                //Fallout_Debug_Info("GGameArea_DrawRoofRect_Mapper Outlines tile:%d", pTile->tileNum);
+            }
+            //Fallout_Debug_Info("GGameArea_DrawRoofRect_Mapper tile:%d", pTile->tileNum);
+            pTile = pTile->next;
+        }
+
+        pThisRoof = pThisRoof->next;
+    }
+    SetAmbientLight_ShaderEffect();
 }
 
 
@@ -2199,8 +2656,8 @@ void GameArea_DrawFloorRect(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD fla
 
     if (!pArea)
         return;
-    if (!pArea->tiles)
-        return;
+    //if (!pArea->tiles)
+    //    return;
     if (!pArea->pFloor_RT)
         return;
     if (!pRect)
@@ -2214,16 +2671,27 @@ void GameArea_DrawFloorRect(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD fla
 
     unique_ptr<STORED_VIEW> store_view(new STORED_VIEW(true));
 
+    if (flags & FLG_Floor) {
+        XMFLOAT4 clearColour = { 0.0f,0.0f,0.0f,0.0f };
+        pArea->pFloor_RT->ClearRect(clearColour, pRect);
+    }
     FRMframeDx* pFrame = nullptr;
+    DWORD frmID = 0;
 
     TILEnode* pTile = pArea->tiles;
     while (pTile) {
-        if (!pTile->pFrm) {
-            imonitorInsertText("no frm for floor tile");
+        /*if (!pTile->pFrm) {
+            imonitorInsertText("GameArea_DrawFloorRect - no frm for floor tile");
             pTile = pTile->next;
             continue;
         }
-        pFrame = pTile->pFrm->GetFrame(pTile->frmID, 0, 0);
+        pFrame = pTile->pFrm->SetFrm(pTile->frmID, 0, 0);*/
+        frmID = GameMap_GetTileFrmID(pTile->tileNum, level, FALSE, nullptr);
+        if ((frmID & 0x00FFFFFF) == 1) {
+            pTile = pTile->next;
+            continue;
+        }
+        pFrame = GameMap_GetTile_Frame(pTile->tileNum, level, FALSE);
         if (pFrame == nullptr) {
             pTile = pTile->next;
             continue;
@@ -2246,21 +2714,136 @@ void GameArea_DrawFloorRect(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD fla
         ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetShaderResourceView();
         pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
 
-        //set pixel shader stuff
-        if (pFrame->GetPixelWidth() == 1) {
-            pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_8, nullptr, 0);
+        if (flags & FLG_Floor) {
+            //set pixel shader stuff
+            if (pFrame->GetPixelWidth() == 1) {
+                pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_8, nullptr, 0);
+            }
+            else {
+                pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_32, nullptr, 0);
+            }
+
+            pArea->pFloor_RT->DrawIndexed(4, 0, 0, nullptr, (float)pTile->x, (float)pTile->y, frame_width, frame_height, pRect);
         }
-        else {
-            pD3DDevContext->PSSetShader(pd3d_PS_Basic_Tex_32, nullptr, 0);
+//        if (pArea->pHud_RT_Outline && (flags & FLG_Hud_Outline) && (pTile->pFrm->combatFlags & FLG_IsOutlined)) {
+        DWORD combatFlags = GameMap_GetTile_Flags(pTile->tileNum, level, FALSE);
+        if (pArea->pHud_RT_Outline && (flags & FLG_Hud_Outline) && (combatFlags & FLG_IsOutlined)) {
+
+            pFrame->GetTexturePixelSize(&objData.PixelData.x, &objData.PixelData.y);
+
+            XMFLOAT2 pal_colour = { 0.0f, 0.0f };
+            if (combatFlags & FLG_NonPCTeamMem)
+                pal_colour = { (float)PAL_OUTLINE_NOT_TEAM / 256.0f, 1.0f };
+            else if (combatFlags & FLG_MouseHex)
+                pal_colour = { (float)PAL_OUTLINE_MOUSE / 256.0f, 0.6f };
+            else if (combatFlags & FLG_combatUnk0x04)
+                pal_colour = { (float)PAL_OUTLINE_UNKNOWN04 / 256.0f, 1.0f };
+            else if (combatFlags & FLG_PCTeamMem)
+                pal_colour = { (float)PAL_OUTLINE_TEAM / 256.0f, 1.0f };
+            else if (combatFlags & FLG_ItemUnderMouse)
+                pal_colour = { (float)PAL_OUTLINE_ITEM_UNDER_MOUSE / 256.0f, 1.0f };
+            else if (combatFlags & FLG_NotVisByPC)
+                pal_colour = { (float)PAL_OUTLINE_NOT_VISIBLE / 256.0f, 1.0f };
+            else
+                pal_colour = { (float)PAL_OUTLINE_OTHER / 256.0f, 1.0f };
+
+            objData.PalEffects.x = pal_colour.x;
+            objData.PalEffects.y = pal_colour.y;
+            pPS_BuffersFallout->UpdateObjBuff(&objData);
+
+            //set pixel shader
+            if (pFrame->GetPixelWidth() == 1)
+                pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge8, nullptr, 0);
+            else
+                pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge32, nullptr, 0);
+
+            RECT rcHud = { pRect->left - rcGame_PORTAL.left + pArea->rect.left, pRect->top - rcGame_PORTAL.top + pArea->rect.top, pRect->right - rcGame_PORTAL.left + pArea->rect.left,  pRect->bottom - rcGame_PORTAL.top + pArea->rect.top };
+            pArea->pHud_RT_Outline->DrawIndexed(4, 0, 0, nullptr, (float)pTile->x - rcGame_PORTAL.left + pArea->rect.left, (float)pTile->y - rcGame_PORTAL.top + pArea->rect.top, frame_width, frame_height, &rcHud);
         }
 
-        pArea->pFloor_RT->DrawIndexed(4, 0, 0, nullptr, (float)pTile->x, (float)pTile->y, frame_width, frame_height, pRect);
         pTile = pTile->next;
     }
 
     SetAmbientLight_ShaderEffect();
 }
 
+
+//____________________________________________________________________________________________________________________
+void GameArea_DrawTileOutline(GAME_AREA* pArea, DWORD frmID, LONG tileNum, LONG level, BOOL isRoof, DWORD combatFlags) {
+    ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
+    if (pD3DDevContext == nullptr)
+        return;
+    if ((frmID & 0x00FFFFFF) == 1)
+        return;
+
+    FRMCached* pFrm = new FRMCached(frmID, 0);
+    FRMframeDx* pFrame = pFrm->GetFrame(0,0);
+    if (pFrame == nullptr) 
+        return;
+    
+    DWORD frame_width = pFrame->GetWidth();
+    DWORD frame_height = pFrame->GetHeight();
+
+    ID3D11Buffer* frame_pd3dVB = nullptr;
+    pFrame->GetVertexBuffer(&frame_pd3dVB);
+    //set vertex stuff
+    UINT stride = sizeof(VERTEX_BASE);
+    UINT offset = 0;
+    pD3DDevContext->IASetVertexBuffers(0, 1, &frame_pd3dVB, &stride, &offset);
+    //set texture stuff
+    ID3D11ShaderResourceView* pframe_Tex_shaderResourceView = pFrame->GetShaderResourceView();
+    pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
+
+
+    LONG xPos = 0, yPos = 0;
+    TileToSqr(tileNum, &xPos, &yPos);
+
+    yPos += 24;
+    xPos += -25;
+    if(isRoof)
+        yPos -= 96;
+
+    if (pFrame) {
+        xPos += pFrame->GetOffset_OriCentre_X();
+        yPos += pFrame->GetOffset_OriCentre_Y();
+    }
+
+    if (pArea->pHud_RT_Outline && (combatFlags & FLG_IsOutlined)) {
+
+        pFrame->GetTexturePixelSize(&objData.PixelData.x, &objData.PixelData.y);
+
+        XMFLOAT2 pal_colour = { 0.0f, 0.0f };
+        if (combatFlags & FLG_NonPCTeamMem)
+            pal_colour = { (float)PAL_OUTLINE_NOT_TEAM / 256.0f, 1.0f };
+        else if (combatFlags & FLG_MouseHex)
+            pal_colour = { (float)PAL_OUTLINE_MOUSE / 256.0f, 0.6f };
+        else if (combatFlags & FLG_combatUnk0x04)
+            pal_colour = { (float)PAL_OUTLINE_UNKNOWN04 / 256.0f, 1.0f };
+        else if (combatFlags & FLG_PCTeamMem)
+            pal_colour = { (float)PAL_OUTLINE_TEAM / 256.0f, 1.0f };
+        else if (combatFlags & FLG_ItemUnderMouse)
+            pal_colour = { (float)PAL_OUTLINE_ITEM_UNDER_MOUSE / 256.0f, 1.0f };
+        else if (combatFlags & FLG_NotVisByPC)
+            pal_colour = { (float)PAL_OUTLINE_NOT_VISIBLE / 256.0f, 1.0f };
+        else
+            pal_colour = { (float)PAL_OUTLINE_OTHER / 256.0f, 1.0f };
+
+        objData.PalEffects.x = pal_colour.x;
+        objData.PalEffects.y = pal_colour.y;
+        pPS_BuffersFallout->UpdateObjBuff(&objData);
+
+        //set pixel shader
+        if (pFrame->GetPixelWidth() == 1)
+            pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge8, nullptr, 0);
+        else
+            pD3DDevContext->PSSetShader(pd3d_PS_Outline_OuterEdge32, nullptr, 0);
+
+        pArea->pHud_RT_Outline->DrawIndexed(4, 0, 0, nullptr, (float)xPos - rcGame_PORTAL.left, (float)yPos - rcGame_PORTAL.top, frame_width, frame_height, nullptr);
+    }
+    pFrame = nullptr;
+    delete pFrm;
+    pFrm = nullptr;
+}
 
 
 //__________________________________________________________________
@@ -2705,7 +3288,9 @@ void GameArea_DrawObj(GAME_AREA* pArea, OBJStruct* pObj, RECT* pRect, DWORD draw
         return;
     if (pObj == *ppObj_Mouse)
         return;
-
+    if (pObj == *ppObj_Selected)
+        return;
+    
     RenderTarget2* pTarget_RT = nullptr;
     if ((pObj->flags & FLG_Flat)) {
         if(drawFlags & FLG_Floor)
@@ -2715,13 +3300,18 @@ void GameArea_DrawObj(GAME_AREA* pArea, OBJStruct* pObj, RECT* pRect, DWORD draw
         if (drawFlags & FLG_Obj)
             pTarget_RT = pArea->pObjects_RT;
     }
-    if (!pTarget_RT)
-        return;
+    //if (!pTarget_RT)
+    //    return;
 
     ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
     if (pD3DDevContext == nullptr)
         return;
     OBJStructDx* pObjDx = (OBJStructDx*)pObj;
+
+
+    //if (!pTarget_RT && (drawFlags != FLG_Hud_Outline || !pArea->pHud_RT_Outline || !(pObjDx->combatFlags & FLG_IsOutlined) || (pObjDx->combatFlags & FLG_NonInteractive)))
+    //    return;
+
 
     DWORD fID = pObjDx->frmID;
     LONG artType = ((0x0F000000 & fID) >> 24);
@@ -2910,30 +3500,30 @@ void GameArea_DrawObj(GAME_AREA* pArea, OBJStruct* pObj, RECT* pRect, DWORD draw
 
     //set texture
     pD3DDevContext->PSSetShaderResources(0, 1, &pframe_Tex_shaderResourceView);
-
-    //set pixel shader
-    if ((pObjDx->flags & FLG_Flat)) {
-        if (frame_pixelWidth == 1)
-            pD3DDevContext->PSSetShader(pd3d_PS_ObjFlat8, nullptr, 0);
-        else
-            pD3DDevContext->PSSetShader(pd3d_PS_ObjFlat32, nullptr, 0);
-    }
-    else {
-        if (useOriginalLighting_Objects || isUniformlyLit) {
+    if (pTarget_RT) {
+        //set pixel shader
+        if ((pObjDx->flags & FLG_Flat)) {
             if (frame_pixelWidth == 1)
-                pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright8_OriginalLighting, nullptr, 0);
+                pD3DDevContext->PSSetShader(pd3d_PS_ObjFlat8, nullptr, 0);
             else
-                pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright32_OriginalLighting, nullptr, 0);
+                pD3DDevContext->PSSetShader(pd3d_PS_ObjFlat32, nullptr, 0);
         }
         else {
-            if (frame_pixelWidth == 1)
-                pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright8, nullptr, 0);
-            else
-                pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright32, nullptr, 0);
+            if (useOriginalLighting_Objects || isUniformlyLit) {
+                if (frame_pixelWidth == 1)
+                    pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright8_OriginalLighting, nullptr, 0);
+                else
+                    pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright32_OriginalLighting, nullptr, 0);
+            }
+            else {
+                if (frame_pixelWidth == 1)
+                    pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright8, nullptr, 0);
+                else
+                    pD3DDevContext->PSSetShader(pd3d_PS_ObjUpright32, nullptr, 0);
+            }
         }
+        pTarget_RT->DrawIndexed(4, 0, 0, nullptr, (float)xPos, (float)yPos, frame_width, frame_height, pRect);
     }
-    pTarget_RT->DrawIndexed(4, 0, 0, nullptr, (float)xPos, (float)yPos, frame_width, frame_height, pRect);
-
     //----draw outlines-----------------------------------------
     if (pArea->pHud_RT_Outline && (pObjDx->combatFlags & FLG_IsOutlined) && !(pObjDx->combatFlags & FLG_NonInteractive)) {
         //set pixel shader
@@ -2944,7 +3534,7 @@ void GameArea_DrawObj(GAME_AREA* pArea, OBJStruct* pObj, RECT* pRect, DWORD draw
 
         RECT rcHud = { pRect->left - rcGame_PORTAL.left + pArea->rect.left, pRect->top - rcGame_PORTAL.top + pArea->rect.top, pRect->right - rcGame_PORTAL.left + pArea->rect.left,  pRect->bottom - rcGame_PORTAL.top + pArea->rect.top };
         pArea->pHud_RT_Outline->DrawIndexed(4, 0, 0, nullptr, (float)xPos - rcGame_PORTAL.left + pArea->rect.left, (float)yPos - rcGame_PORTAL.top + pArea->rect.top, frame_width, frame_height, &rcHud);
-
+    
     }
 
     pFrame = nullptr;
@@ -3096,7 +3686,7 @@ void GameArea_DrawObjectRect(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD fl
 
     unique_ptr<STORED_VIEW> store_view(new STORED_VIEW(true));
 
-    if (pArea->pObjects_RT) {
+    if (pArea->pObjects_RT && (flags & FLG_Obj)) {
         XMFLOAT4 clearColour = { 0.0f,0.0f,0.0f,0.0f };
         pArea->pObjects_RT->ClearRect(clearColour, pRect);
     }
@@ -3144,12 +3734,13 @@ void GameArea_DrawPalAniTiles(GAME_AREA* pArea, LONG level, DWORD flags) {
 
     TILEnode* pTile = pArea->tiles;
     while (pTile) {
-        if (!pTile->pFrm) {
+        //if (!pTile->pFrm) {
             ///imonitorInsertText("no frm for roof tile");
-            pTile = pTile->next;
-            continue;
-        }
-        pFrame = pTile->pFrm->GetFrame(pTile->frmID, 0, 0);
+        //    pTile = pTile->next;
+        //    continue;
+        //}
+        //pFrame = pTile->pFrm->SetFrm(pTile->frmID, 0, 0);
+        pFrame = GameMap_GetTile_Frame(pTile->tileNum, level, FALSE);
         if (pFrame == nullptr || !pFrame->IsAnimated() || !(pFrame->Animation_ZoneFlags() & flags)) {
             pTile = pTile->next;
             continue;
@@ -3189,6 +3780,161 @@ void GameArea_DrawPalAniTiles(GAME_AREA* pArea, LONG level, DWORD flags) {
     }
 
     SetAmbientLight_ShaderEffect();
+}
+
+
+//_______________________________________________________________________
+void GameArea_DrawAreaOutlines(GAME_AREA* pArea, RECT* pRect, LONG level) {
+
+    if (!isRunAsMapper)
+        return;
+    if (!AreAllEdgesVisible())
+        return;
+    if (!pArea)
+        return;
+    if (!pArea->pHud_RT_Outline)
+        return;
+    GAME_AREA* pArea_Game = pGameArea_Main[level];
+    if (!pArea_Game)
+        return;
+    
+    ID3D11Device* pD3DDev = GetD3dDevice();
+    if (pD3DDev == nullptr)
+        return;
+    ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
+    if (pD3DDevContext == nullptr)
+        return;
+    RECT rcHud = { pRect->left - rcGame_PORTAL.left + pArea->rect.left, pRect->top - rcGame_PORTAL.top + pArea->rect.top, pRect->right - rcGame_PORTAL.left + pArea->rect.left,  pRect->bottom - rcGame_PORTAL.top + pArea->rect.top };
+
+    //setup index buffer and primitive topology for drawing lines. 
+    pD3DDevContext->IASetIndexBuffer(pVB_Quad_Line_IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    pD3DDevContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+
+    //set pixel shader
+    pD3DDevContext->PSSetShader(pd3d_PS_Colour32, nullptr, 0);
+
+    //set vertex stuff
+    UINT stride = sizeof(VERTEX_BASE);
+    UINT offset = 0;
+    ID3D11Buffer* pd3dVB = nullptr;
+
+    //line colour
+    GEN_SURFACE_BUFF_DATA genSurfaceData{};
+
+    //draw tile visual limit lines - obscuring floor/roof tiles and flat objects.
+    pd3dVB = TileLimitsRectVB_Get(level);
+    genSurfaceData.genData4_1 = { 1.0f, 0.5f, 0.0f,1.0f };//orange
+    pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+
+    pD3DDevContext->IASetVertexBuffers(0, 1, &pd3dVB, &stride, &offset);
+    pArea->pHud_RT_Outline->DrawIndexed(5, 0, 0, nullptr, (float)0- rcGame_PORTAL.left - 4800, (float)0 - rcGame_PORTAL.top, 8000, 3600, &rcHud);
+    
+    //draw highlighted tile visual limit lines flagged to obscure non-flat objects as well.
+    genSurfaceData.genData4_1 = { 1.0f, 0.75f, 0.0f,1.0f };//light orange
+    pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+    DWORD tileLimitTest = 0x01000000;
+    for (int edge = 0; edge < 4; edge++) {
+        if(pArea_Game->tileLimitFlags & tileLimitTest)
+            pArea->pHud_RT_Outline->DrawIndexed(2, edge, 0, nullptr, (float)0 - rcGame_PORTAL.left - 4800, (float)0 - rcGame_PORTAL.top, 8000, 3600, &rcHud);
+        tileLimitTest >>= 8;
+    }
+    //if adjusting iso edge position draw selected edge a different colour.
+    EDGE_SELECT selected_edge = Get_SelectedEdge(SEL_RC_TYPE::isometric);
+    if (selected_edge != EDGE_SELECT::none) {
+        genSurfaceData.genData4_1 = { 0.0f, 1.0f, 0.0f,1.0f }; //green
+        pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+        pArea->pHud_RT_Outline->DrawIndexed(2, static_cast<int>(selected_edge), 0, nullptr, (float)0 - rcGame_PORTAL.left - 4800, (float)0 - rcGame_PORTAL.top, 8000, 3600, &rcHud);
+    }
+
+    //draw area rects
+    LONG count = 0;
+    while (pArea_Game) {
+        DWORD width = pArea_Game->rect.right - pArea_Game->rect.left;
+        DWORD height = pArea_Game->rect.bottom - pArea_Game->rect.top;
+        LONG xPos = pArea_Game->rect.left;
+        LONG yPos = pArea_Game->rect.top;
+
+
+        CreateQuadVB_LineStrip(pD3DDev, width, height, &pd3dVB);
+
+        pD3DDevContext->IASetVertexBuffers(0, 1, &pd3dVB, &stride, &offset);
+
+
+        //draw currently selected area rect a different colour. 
+        if(count == GetSelectedEdgeRectNum())
+            genSurfaceData.genData4_1 = { 0.0f, 1.0f, 1.0f,1.0f };//light blue
+        else
+            genSurfaceData.genData4_1 = { 0.0f, 0.5f, 1.0f,1.0f };//dark blue
+        pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+
+        pArea->pHud_RT_Outline->DrawIndexed(5, 0, 0, nullptr, (float)xPos - rcGame_PORTAL.left, (float)yPos - rcGame_PORTAL.top, width, height, &rcHud);
+
+        //if adjusting edge position draw selected edge a different colour.
+        EDGE_SELECT selected_edge = Get_SelectedEdge(SEL_RC_TYPE::square);
+        if (count == GetSelectedEdgeRectNum() && selected_edge != EDGE_SELECT::none) {
+            genSurfaceData.genData4_1 = { 0.0f, 1.0f, 0.0f,1.0f }; //green
+            pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+            pArea->pHud_RT_Outline->DrawIndexed(2, static_cast<int>(selected_edge), 0, nullptr, (float)xPos - rcGame_PORTAL.left, (float)yPos - rcGame_PORTAL.top, width, height, &rcHud);
+        }
+
+        if (pd3dVB)
+            pd3dVB->Release();
+
+        pArea_Game = pArea_Game->next;
+        count++;
+    }
+
+    //return settings for index buffer and primitive topology for drawing quads.
+    pD3DDevContext->IASetIndexBuffer(pVB_Quad_IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    pD3DDevContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+}
+
+
+//_______________________________________________________________________________
+void GameArea_DrawSelectingRectOutline(GAME_AREA* pArea, RECT* pRect, LONG level) {
+
+    if (!isRunAsMapper)
+        return;
+    if (!pArea)
+        return;
+    if (!pArea->pHud_RT_Outline)
+        return;
+    ID3D11Device* pD3DDev = GetD3dDevice();
+    if (pD3DDev == nullptr)
+        return;
+    ID3D11DeviceContext* pD3DDevContext = GetD3dDeviceContext();
+    if (pD3DDevContext == nullptr)
+        return;
+    ID3D11Buffer* pd3dVB = SelectingRectVB_Get();
+    if (!pd3dVB)
+        return;
+
+    RECT rcHud = { pRect->left - rcGame_PORTAL.left + pArea->rect.left, pRect->top - rcGame_PORTAL.top + pArea->rect.top, pRect->right - rcGame_PORTAL.left + pArea->rect.left,  pRect->bottom - rcGame_PORTAL.top + pArea->rect.top };
+
+    //setup index buffer and primitive topology for drawing lines. 
+    pD3DDevContext->IASetIndexBuffer(pVB_Quad_Line_IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    pD3DDevContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+
+    //set pixel shader
+    pD3DDevContext->PSSetShader(pd3d_PS_Colour32, nullptr, 0);
+
+    //line colour
+    GEN_SURFACE_BUFF_DATA genSurfaceData{};
+    genSurfaceData.genData4_1 = { 0.5f, 1.0f, 0.5f, 1.0f };//green
+    pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
+
+    //set vertex stuff
+    UINT stride = sizeof(VERTEX_BASE);
+    UINT offset = 0;
+
+    if (pd3dVB) {
+        pD3DDevContext->IASetVertexBuffers(0, 1, &pd3dVB, &stride, &offset);
+        pArea->pHud_RT_Outline->DrawIndexed(5, 0, 0, nullptr, (float)pRect->left - rcGame_PORTAL.left -4800, (float)pRect->top - rcGame_PORTAL.top, 8000, 3600, &rcHud);
+    }
+
+    //return settings for index buffer and primitive topology for drawing quads.
+    pD3DDevContext->IASetIndexBuffer(pVB_Quad_IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    pD3DDevContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 }
 
 
@@ -3297,11 +4043,96 @@ void GameArea_Draw_FloatingText(GAME_AREA* pArea, RECT* pRect, LONG level, DWORD
 
 //______________________________________________
 bool GameAreas_Set_Current_Area_Hex(LONG hexNum) {
+    
+    if (isRunAsMapper) {
+        if (!pGameArea_Mapper[*pMAP_LEVEL]) {
+            pGameArea_Current = nullptr;
+            return false;
+        }
+        if (pGameArea_Current == pGameArea_Mapper[*pMAP_LEVEL])
+            return true;
+        if (pGameArea_Current != nullptr) {
+            pGameArea_Current->deleteRenderTargets();
+            pGameArea_Current->deleteRoofRenderTargets();
+        }
+        pGameArea_Current = pGameArea_Mapper[*pMAP_LEVEL];
+        if(pGameArea_Current)
+            pGameArea_Current->CreateRendertargets();
+        gameArea_RoofRef = 0;
+        gameArea_ReDraw = true;
+        return true;
+    }
+    
+    
     LONG sqrX = 0;
     LONG sqrY = 0;
     HexNumToSqr(hexNum, &sqrX, &sqrY);
 
-    GAME_AREA* pThisArea = pGameArea[*pMAP_LEVEL];
+    GAME_AREA* pThisArea = pGameArea_Main[*pMAP_LEVEL];
+
+    while (pThisArea) {
+        if (sqrX > pThisArea->rect.left && sqrX < pThisArea->rect.right && sqrY > pThisArea->rect.top && sqrY < pThisArea->rect.bottom) {
+            if (pGameArea_Current == pThisArea) {
+                //imonitorInsertText("GameAreas_Set_Current_Area_Hex - area already set");
+            }
+            else {
+                if (pGameArea_Current != nullptr) {
+                    pGameArea_Current->deleteRenderTargets();
+                    pGameArea_Current->deleteRoofRenderTargets();
+                    //imonitorInsertText("GameAreas_Set_Current_Area_Hex - delete previous area RT's");
+
+                }
+                pGameArea_Current = pThisArea;
+                pGameArea_Current->CreateRendertargets();
+                gameArea_RoofRef = 0;
+                gameArea_ReDraw = true;
+                //imonitorInsertText("GameAreas_Set_Current_Area_Hex - set new area");
+                CheckIfPcUnderRoof();
+                //GameArea_DrawFogRect(pGameArea_Current, nullptr, *pMAP_LEVEL);
+                //PC_ScanLineOfSight();
+            }
+            return true;
+        }
+        else {
+            pThisArea = pThisArea->next;
+            //areaNum++;
+        }
+    }
+    //imonitorInsertText("GameAreas_Set_Current_Area_Hex - area not found");
+    pGameArea_Current = nullptr;
+    return false;
+}
+
+
+
+//_________________________________________________________
+bool GameAreas_Set_Current_Area_Hex(LONG hex_x, LONG hex_y) {
+
+    if (isRunAsMapper) {
+        if (!pGameArea_Mapper[*pMAP_LEVEL]) {
+            pGameArea_Current = nullptr;
+            return false;
+        }
+        if (pGameArea_Current == pGameArea_Mapper[*pMAP_LEVEL])
+            return true;
+        if (pGameArea_Current != nullptr) {
+            pGameArea_Current->deleteRenderTargets();
+            pGameArea_Current->deleteRoofRenderTargets();
+        }
+        pGameArea_Current = pGameArea_Mapper[*pMAP_LEVEL];
+        if (pGameArea_Current)
+            pGameArea_Current->CreateRendertargets();
+        gameArea_RoofRef = 0;
+        gameArea_ReDraw = true;
+        return true;
+    }
+
+
+    LONG sqrX = 0;
+    LONG sqrY = 0;
+    HexToSqr(hex_x, hex_y, &sqrX, &sqrY);
+
+    GAME_AREA* pThisArea = pGameArea_Main[*pMAP_LEVEL];
 
     while (pThisArea) {
         if (sqrX > pThisArea->rect.left && sqrX < pThisArea->rect.right && sqrY > pThisArea->rect.top && sqrY < pThisArea->rect.bottom) {
@@ -3345,8 +4176,8 @@ void GameAreas_Display() {
         return;
     float scaleX = gameArea_scaleX;
     float scaleY = gameArea_scaleY;
-
-    pGameArea_Current->pFloor_RT->Display(pd3d_PS_RenderFloorLight32, pGameArea_Current->pLight_RT);
+    if(pGameArea_Current->pFloor_RT)
+        pGameArea_Current->pFloor_RT->Display(pd3d_PS_RenderFloorLight32, pGameArea_Current->pLight_RT);
     GEN_SURFACE_BUFF_DATA genSurfaceData;
     genSurfaceData.genData4_1 = { 0,0,0,0 };
     pPS_BuffersFallout->UpdateBaseBuff(&genSurfaceData);
@@ -3354,8 +4185,8 @@ void GameAreas_Display() {
         pGameArea_Current->pFog_RT->Display(pd3d_PS_Colour_32_Alpha, nullptr);
 
     DrawMouseObjDx(scaleX, scaleY, 0);
-
-    pGameArea_Current->pObjects_RT->Display(nullptr, nullptr);
+    if (pGameArea_Current->pObjects_RT)
+        pGameArea_Current->pObjects_RT->Display(nullptr, nullptr);
 
 
     GameArea_DisplayRooves(pGameArea_Current, scaleX, scaleY);
@@ -3365,8 +4196,8 @@ void GameAreas_Display() {
     pGameArea_Current->pFog_RT->SetPosition(x_fog, y_fog - 96.0f);
     pGameArea_Current->pFog_RT->Display(pd3d_PS_DrawTextAlpha, nullptr);
     pGameArea_Current->pFog_RT->SetPosition(x_fog, y_fog);*/
-
-    pGameArea_Current->pHud_RT->Display(nullptr, nullptr);
+    if (pGameArea_Current->pHud_RT)
+        pGameArea_Current->pHud_RT->Display(nullptr, nullptr);
 
     DrawMouseObjDx(scaleX, scaleY, 1);
 
@@ -3406,9 +4237,11 @@ bool GameAreas_DrawToWindow(Window_DX* pWin, LONG hexNum, LONG portalWidth, LONG
 
     LONG viewCentrePos = *pVIEW_HEXPOS;
     SetViewPosition_Hex(hexNum, 0x0);
-
-    pGameArea_Current->pFloor_RT->Display(pd3d_PS_RenderFloorLight32, pGameArea_Current->pLight_RT);
-    pGameArea_Current->pObjects_RT->Display(nullptr, nullptr);
+    
+    if (pGameArea_Current->pFloor_RT)
+        pGameArea_Current->pFloor_RT->Display(pd3d_PS_RenderFloorLight32, pGameArea_Current->pLight_RT);
+    if (pGameArea_Current->pObjects_RT)
+        pGameArea_Current->pObjects_RT->Display(nullptr, nullptr);
     GameArea_DisplayRooves(pGameArea_Current, gameArea_scaleX, gameArea_scaleY);
 
     SetScreenProjectionMatrix_XM(SCR_WIDTH, SCR_HEIGHT);
@@ -3420,83 +4253,142 @@ bool GameAreas_DrawToWindow(Window_DX* pWin, LONG hexNum, LONG portalWidth, LONG
 
 
 //__________________________________________________________________________________
-bool CheckTileAreaRect(int tilePosNum, int level, GAME_AREA* pAreaNode, bool isRoof) {
+BOOL CheckTileAreaRect(int tilePosNum, int level, GAME_AREA* pAreaNode, BOOL isRoof) {
+
     if (!pAreaNode)
-        return false;
+        return FALSE;
     if (level < 0 || level >= 3)
-        return false;
+        return FALSE;
     if (tilePosNum < 0 || tilePosNum >= *pNUM_TILES)
-        return false;
+        return FALSE;
 
-    DWORD** levelOffset = *pMapTileLevelOffset;
-    LONG tileLstNum = levelOffset[level][tilePosNum];
-    LONG tileFlag = 0;
+    DWORD frmID = 0;
+    if (isRoof) 
+        frmID = GameMap_GetTileFrmID(tilePosNum, level, TRUE, nullptr);
+    
+    else 
+        frmID = GameMap_GetTileFrmID(tilePosNum, level, FALSE, nullptr);
 
-
-    //sfall MoreTiles
-    if (SFALL_MoreTiles) {
-        tileFlag = (tileLstNum & 0x0000C000) >> 14;
-        tileLstNum = tileLstNum & 0x00003FFF;
-    }
-    else {
-        tileFlag = (tileLstNum & 0x0000F000) >> 12;
-        tileLstNum = tileLstNum & 0x00000FFF;
-    }
-
-    if (tileLstNum == 1)
-        return false;
-
-    TILEnode* thisTile = nullptr;
-    DWORD frmID = 0x04000000 | tileLstNum;
-
-    FRMtile* pFrm = new FRMtile(frmID, 0);
-    FRMframeDx* pFrame = pFrm->GetFrame(frmID, 0, 0);
+    FRMCached* pFrm = new FRMCached(frmID, 0);
+    FRMframeDx* pFrame = pFrm->GetFrame(0, 0);
     LONG xPos = 0, yPos = 0;
     TileToSqr(tilePosNum, &xPos, &yPos);
 
     yPos += 24;
     xPos += -25;
+    if (isRoof)
+        yPos -= 96;
 
     if (pFrame) {
         xPos += pFrame->GetOffset_OriCentre_X();
         yPos += pFrame->GetOffset_OriCentre_Y();
     }
+    pFrame = nullptr;
+    delete pFrm;
+
     int areaNum = 0;
+    TILEnode** ppTileList = nullptr;
+    TILEnode* thisTile = nullptr;
     while (pAreaNode) {
+        if (isRoof)
+            ppTileList = &pAreaNode->rooves->tiles;
+        else
+            ppTileList = &pAreaNode->tiles;
+
         //check if tile is in area rect and add to tile list
         if (xPos + 80 >= pAreaNode->rect.left && xPos <= pAreaNode->rect.right && yPos + 36 >= pAreaNode->rect.top && yPos <= pAreaNode->rect.bottom) {
-            if (!pAreaNode->tiles) {
-                pAreaNode->tiles = new TILEnode;
-                thisTile = pAreaNode->tiles;
+
+            if (!*ppTileList) {
+                if ((frmID & 0x00FFFFFF) == 1)
+                    return TRUE;
+                *ppTileList = new TILEnode;
+                thisTile = *ppTileList;
+                thisTile->next = nullptr;
             }
             else {
-                thisTile = pAreaNode->tiles;
-                while (thisTile->next != nullptr)
-                    thisTile = thisTile->next;
-                thisTile->next = new TILEnode;
-                thisTile = thisTile->next;
+                thisTile = *ppTileList;
+                bool exitloop = false;
+                TILEnode* prevTile = nullptr;
+                while (!exitloop) {
+                    if (thisTile->tileNum == tilePosNum) {
+                        //Fallout_Debug_Info("GameArea_Update_Tile_Mapper tileNum match");
+                        exitloop = true;
+                        return TRUE;
+                    }
+                    else if (thisTile->next == nullptr) {
+                        if ((frmID & 0x00FFFFFF) == 1)
+                            return TRUE;
+                        thisTile->next = new TILEnode;
+                        thisTile = thisTile->next;
+                        thisTile->next = nullptr;
+                        exitloop = true;
+                        //Fallout_Debug_Info("GameArea_Update_Tile_Mapper add new tile");
+                    }
+                    else {
+                        prevTile = thisTile;
+                        thisTile = thisTile->next;
+                    }
+                }
             }
-            thisTile->x = xPos - pAreaNode->rect.left;
-            thisTile->y = yPos - pAreaNode->rect.top;
+            thisTile->x = xPos;
+            thisTile->y = yPos;
+            if (!isRoof) {
+                thisTile->x -= pAreaNode->rect.left;
+                thisTile->y -= pAreaNode->rect.top;
+            }
+
             thisTile->tileNum = tilePosNum;
-            thisTile->frmID = frmID;
-            thisTile->pFrm = pFrm;
-            thisTile->next = nullptr;
-            return true;
+            return TRUE;
         }
         //try next area
         pAreaNode = pAreaNode->next;
         areaNum++;
     }
     //tile not in any areas
-    thisTile = nullptr;
-    pFrame = nullptr;
-    delete pFrm;
-
-    return false;
+    //Fallout_Debug_Info("GameArea_Update_Tile_Mapper tile not in any areas tile:%d", tilePosNum);
+    return FALSE;
 }
 
 
+//_________________________________________
+BOOL GameArea_CreateRoof_Mapper(LONG level) {
+
+    if (!pGameArea_Mapper[level])
+        return FALSE;
+
+    GAME_AREA* pGameArea = pGameArea_Mapper[level];
+
+    if (pGameArea->rooves)
+        pGameArea->deleteAllRoofData();
+
+    if (pGameArea->pMarkedRoofTile)
+        delete[] pGameArea->pMarkedRoofTile;
+    pGameArea->pMarkedRoofTile = new int[*pNUM_TILES];
+    memset(pGameArea->pMarkedRoofTile, 0, *pNUM_TILES * sizeof(int));
+
+    tilenodes_deleted = 0;
+    tilecount = 0;
+
+    pGameArea->rooves = new TILE_AREA_Node;
+
+    CopyRect(&pGameArea->rooves->rect, &pGameArea->rect);
+
+    pGameArea->rooves->width = pGameArea->width;
+    pGameArea->rooves->height = pGameArea->height;
+
+    return TRUE;
+}
+
+
+//___________________________________________________________
+BOOL GameArea_Update_Tile_Mapper(LONG tilePosNum, LONG level) {
+
+    BOOL ret_val = CheckTileAreaRect(tilePosNum, level, pGameArea_Mapper[level], FALSE);
+    return ret_val | CheckTileAreaRect(tilePosNum, level, pGameArea_Mapper[level], TRUE);
+}
+
+
+//convert hex tile border positions to square coordinates
 //_________________________________________________________
 bool SetEdgesFromHexNumbers(RECT* phexRect, RECT* pSquRect) {
     if (!phexRect)
@@ -3513,9 +4405,33 @@ bool SetEdgesFromHexNumbers(RECT* phexRect, RECT* pSquRect) {
 }
 
 
-//______________________________________
-bool GameAreas_Save(const char* MapName) {
+//convert square coordinates to hex tile positions on the border of each edge.
+//_______________________________________________________
+bool SetEdgesToHexNumbers(RECT* phexRect, RECT* pSquRect) {
+    if (!phexRect)
+        return false;
+    if (!pSquRect)
+        return false;
+    //max square dimensions
+    //-4800, 0, 3200, 3600
+    //min left = hex x199, y0 = squ x-4800, y1200 
+    //min top  = hex x0, y0 = squ x0, y0 
+    //max right = hex x0, y199 = squ x3200, y2400
+    //max bottom = hex x199, y199 = squ x-1600, y3600
 
+    phexRect->left = SqrToHexNum_Scroll(pSquRect->left, 1200);
+    phexRect->top = SqrToHexNum_Scroll(0, pSquRect->top);
+    phexRect->right = SqrToHexNum_Scroll(pSquRect->right, 2400);
+    phexRect->bottom = SqrToHexNum_Scroll(-1600, pSquRect->bottom);
+
+    return true;
+}
+//SqrToHexNum_Scroll(LONG x, LONG y)
+
+//_____________________________________________________
+bool GameAreas_Save(const char* MapName, DWORD version) {
+    if (version != 2 && version != 3)
+        return false;
 
     char mapPath[32];
     sprintf_s(mapPath, 32, "maps\\%s", MapName);
@@ -3526,21 +4442,32 @@ bool GameAreas_Save(const char* MapName) {
         return false;
 
     fall_fwrite32_BE(FileStream, 0x45444745);
-    fall_fwrite32_BE(FileStream, 0x03);//version3 - includes angled edges and use rectangular coordinates for map edges instead of tile numbers used in versions 1 and 2;
+    fall_fwrite32_BE(FileStream, version);//version3 - includes angled edges and use rectangular coordinates for map edges instead of tile numbers used in versions 1 and 2;
 
     GAME_AREA* pThisArea = nullptr;
+    RECT rchex_v2{ 0,0,0,0 };
+
     for (int level = 0; level < 3; level++) {
-        pThisArea = pGameArea[level];
+        pThisArea = pGameArea_Main[level];
         fall_fwrite32_BE(FileStream, level);
 
-        fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->tileLimits.east, 4);
+        fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->tileLimits.left, 4);
         fall_fwrite32_BE(FileStream, pThisArea->tileLimitFlags);
-
-        fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->rect.left, 4);
+        if (version == 2) {
+            SetEdgesToHexNumbers(&rchex_v2, &pThisArea->rect);
+            fall_fwrite32_Array_BE(FileStream, (DWORD*)&rchex_v2.left, 4);
+        }
+        else
+            fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->rect.left, 4);
         while (pThisArea->next) {//load extra areas
             fall_fwrite32_BE(FileStream, level);
             pThisArea = pThisArea->next;
-            fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->rect.left, 4);
+            if (version == 2) {
+                SetEdgesToHexNumbers(&rchex_v2, &pThisArea->rect);
+                fall_fwrite32_Array_BE(FileStream, (DWORD*)&rchex_v2.left, 4);
+            }
+            else
+                fall_fwrite32_Array_BE(FileStream, (DWORD*)&pThisArea->rect.left, 4);
         }
     }
     fall_fclose(FileStream);
@@ -3551,7 +4478,7 @@ bool GameAreas_Save(const char* MapName) {
 
 //______________________________________
 bool GameAreas_Load(const char* MapName) {
-
+   
     char mapPath[32];
     sprintf_s(mapPath, 32, "maps\\%s", MapName);
     memcpy(strchr(mapPath, '.'), ".edg\0", 5);
@@ -3583,27 +4510,23 @@ bool GameAreas_Load(const char* MapName) {
         return false;
     }
 
-    DWORD** levelOffset = *pMapTileLevelOffset;
-    LONG tileLstNum = 0;
-    LONG tileFlag = 0;
-    int tileY = 0, tileX = 0;
-    int floorNum = 0;
+
     GAME_AREA* pThisArea = nullptr;
     pGameArea_Current = nullptr;
     DWORD tileLimitFlags = 0;
-    COMPASS tileLimits = { 0,0,0,0 };
+    RECT tileLimits = { 0,0,0,0 };
 
     for (int level = 0; level < 3; level++) {
-        if (pGameArea[level]) {
-            delete pGameArea[level];
-            pGameArea[level] = nullptr;
+        if (pGameArea_Main[level]) {
+            delete pGameArea_Main[level];
+            pGameArea_Main[level] = nullptr;
         }
-        pGameArea[level] = new GAME_AREA;
-        pThisArea = pGameArea[level];
-        floorNum = 0;
+        pGameArea_Main[level] = new GAME_AREA;
+        pThisArea = pGameArea_Main[level];
+
 
         if (hasTileLimits) {//get angled edges for level
-            if (fall_fread32_Array_BE(FileStream, (DWORD*)&tileLimits.east, 4) == -1) {
+            if (fall_fread32_Array_BE(FileStream, (DWORD*)&tileLimits.left, 4) == -1) {
                 fall_fclose(FileStream);
                 return false;
             }
@@ -3611,22 +4534,19 @@ bool GameAreas_Load(const char* MapName) {
                 fall_fclose(FileStream);
                 return false;
             }
-            tileLimits.east += 1;
-            tileLimits.south += 1;
         }
         else {
-            tileLimits = { 99, 0, 0, 99 };
+            tileLimits = { *pNUM_TILE_X, 0, 0, *pNUM_TILE_Y };
             tileLimitFlags = 0;
         }
-        if (tileLimits.west < 0)
-            tileLimits.west = 0;
-        if (tileLimits.east > *pNUM_TILE_X)
-            tileLimits.east = *pNUM_TILE_X;
-        if (tileLimits.north < 0)
-            tileLimits.north = 0;
-        if (tileLimits.south > *pNUM_TILE_Y)
-            tileLimits.south = *pNUM_TILE_Y;
-
+        if (tileLimits.right < 0)
+            tileLimits.right = 0;
+        if (tileLimits.left > *pNUM_TILE_X)
+            tileLimits.left = *pNUM_TILE_X;
+        if (tileLimits.top < 0)
+            tileLimits.top = 0;
+        if (tileLimits.bottom > *pNUM_TILE_Y)
+            tileLimits.bottom = *pNUM_TILE_Y;
 
         RECT edgeRect = { 0,0,0,0 };
         while (currentLev == level) {
@@ -3642,9 +4562,8 @@ bool GameAreas_Load(const char* MapName) {
 
             pThisArea->width = pThisArea->rect.right - pThisArea->rect.left;
             pThisArea->height = pThisArea->rect.bottom - pThisArea->rect.top;
-            pThisArea->tileLimits = { tileLimits.east, tileLimits.north, tileLimits.west, tileLimits.south };
+            CopyRect(&pThisArea->tileLimits, &tileLimits);
             pThisArea->tileLimitFlags = tileLimitFlags;
-            floorNum++;
 
             if (fall_fread32_BE(FileStream, (DWORD*)&currentLev) == -1) {
                 if (level == 2)//exit loop if eof and level 3 done
@@ -3671,55 +4590,106 @@ bool GameAreas_Load(const char* MapName) {
 //___________________________
 void GameAreas_Load_Default() {
 
-    DWORD** levelOffset = *pMapTileLevelOffset;
-    LONG tileLstNum = 0;
-    LONG tileFlag = 0;
-    int tileY = 0, tileX = 0;
-    int floorNum = 0;
-
     GAME_AREA* pThisArea = nullptr;
     pGameArea_Current = nullptr;
     //pGameArea
     for (int level = 0; level < 3; level++) {
-        if (pGameArea[level]) {
-            delete pGameArea[level];
-            pGameArea[level] = nullptr;
+        if (pGameArea_Main[level]) {
+            delete pGameArea_Main[level];
+            pGameArea_Main[level] = nullptr;
         }
-        floorNum = 0;
-        pGameArea[level] = new GAME_AREA;
-        pThisArea = pGameArea[level];
+        pGameArea_Main[level] = new GAME_AREA;
+        pThisArea = pGameArea_Main[level];
 
 
-        pThisArea->tileLimits = { 99,0,0,99 };
+        pThisArea->tileLimits = { *pNUM_TILE_X,0,0,*pNUM_TILE_Y };
+
         pThisArea->rect = { -4800, 0, 3200, 3600 };
-        pThisArea->width = 8000;
-        pThisArea->height = 3600;
-
-        floorNum++;
+        if (Edges_GetActiveVersion() == 2) {
+            pThisArea->rect.right -= 32;
+            pThisArea->rect.bottom -= 24;
+        }
+        else {
+            //set max left another step(32) to allow far left tile to be completly visible.
+            pThisArea->rect.left -= 32;
+            //set max top another step(24) to allow far top tile to be completly visible, plus an additional 96 to allow the matching roof tile to be shown.
+            pThisArea->rect.top -= 120;
+        }
+        pThisArea->width = pThisArea->rect.right- pThisArea->rect.left;
+        pThisArea->height = pThisArea->rect.bottom - pThisArea->rect.top;
     }
 
     GameAreas_Set_Current_Area_Hex(*pVIEW_HEXPOS);
 }
 
 
+
+//__________________________
+void GameAreas_Load_Mapper() {
+    if (!isRunAsMapper)
+        return;
+    GameMap_Tiles_Reset();
+    pGameArea_Current = nullptr;
+    for (int level = 0; level < 3; level++) {
+        if (pGameArea_Mapper[level]) {
+            delete pGameArea_Mapper[level];
+            pGameArea_Mapper[level] = nullptr;
+        }
+        pGameArea_Mapper[level] = new GAME_AREA;
+        pGameArea_Mapper[level]->tileLimits = { *pNUM_TILE_X,0,0,*pNUM_TILE_Y };
+        //subtract 1 from left and top so as to see left and top edge lines at max values.
+        pGameArea_Mapper[level]->rect = { -4800 - 1, -1, 3200, 3600 };
+
+        if (Edges_GetActiveVersion() == 2) {
+            pGameArea_Mapper[level]->rect.right -= 32;
+            pGameArea_Mapper[level]->rect.bottom -= 24;
+        }
+        else {
+            //set max left another step(32) to allow far left tile to be completly visible.
+            pGameArea_Mapper[level]->rect.left -= 32;
+            //set max top another step(24) to allow far top tile to be completly visible, plus an additional 96 to allow the matching roof tile to be shown.
+            pGameArea_Mapper[level]->rect.top -= 120;
+        }
+        pGameArea_Mapper[level]->width = pGameArea_Mapper[level]->rect.right - pGameArea_Mapper[level]->rect.left;
+        pGameArea_Mapper[level]->height = pGameArea_Mapper[level]->rect.bottom - pGameArea_Mapper[level]->rect.top;
+
+        GameArea_CreateRoof_Mapper(level);
+        int yTileLine = pGameArea_Mapper[level]->tileLimits.top * *pNUM_TILE_X;
+        for (int yTile = pGameArea_Mapper[level]->tileLimits.top; yTile < pGameArea_Mapper[level]->tileLimits.bottom; yTile++) {
+            for (int xTile = pGameArea_Mapper[level]->tileLimits.right; xTile < pGameArea_Mapper[level]->tileLimits.left; xTile++) {
+                CheckTileAreaRect(yTileLine + xTile, level, pGameArea_Mapper[level], TRUE);
+                CheckTileAreaRect(yTileLine + xTile, level, pGameArea_Mapper[level], FALSE);
+            }
+            yTileLine += *pNUM_TILE_X;
+        }
+    }
+    GameAreas_Set_Current_Area_Hex(*pVIEW_HEXPOS);
+    Mapper_UpdateScrollBarPositions();
+    TileLimitsRectVB_Set();
+
+}
+
+
+
 //_________________________
 void GameAreas_Load_Tiles() {
-
+    GameMap_Tiles_Reset();
     GAME_AREA* pThisArea = nullptr;
     for (int level = 0; level < 3; level++) {
-        pThisArea = pGameArea[level];
+        pThisArea = pGameArea_Main[level];
+
+        tilecount = 0;
+        int yTileLine = pThisArea->tileLimits.top * *pNUM_TILE_X;
+        for (int yTile = pThisArea->tileLimits.top; yTile < pThisArea->tileLimits.bottom; yTile++) {
+            for (int xTile = pThisArea->tileLimits.right; xTile < pThisArea->tileLimits.left; xTile++) {
+                if (CheckTileAreaRect(yTileLine + xTile, level, pThisArea, FALSE))
+                    tilecount++;//debug counter
+            }
+            yTileLine += *pNUM_TILE_X;
+        }
+
         while (pThisArea) {
             GameArea_CreateRoofList(pThisArea, level);
-
-            tilecount = 0;
-            int yTileLine = pGameArea[level]->tileLimits.north * *pNUM_TILE_X;
-            for (int yTile = pGameArea[level]->tileLimits.north; yTile < pGameArea[level]->tileLimits.south; yTile++) {
-                for (int xTile = pGameArea[level]->tileLimits.west; xTile < pGameArea[level]->tileLimits.east; xTile++) {
-                    if (CheckTileAreaRect(yTileLine + xTile, level, pGameArea[level], false))
-                        tilecount++;//debug counter
-                }
-                yTileLine += *pNUM_TILE_X;
-            }
             pThisArea = pThisArea->next;
         }
     }
@@ -3728,6 +4698,8 @@ void GameAreas_Load_Tiles() {
 
 //_______________________
 void CheckIfPcUnderRoof() {
+    if (!isGameMode)
+        return;
     if (!*ppObj_PC)
         return;
     OBJStructDx* pObjDx = (OBJStructDx*)((OBJStruct*)*ppObj_PC);
@@ -3776,6 +4748,8 @@ void CheckIfPcUnderRoof() {
 
 //________________________
 bool SetPcPositionVector() {
+    if (!isGameMode)
+        return false;
     if (!*ppObj_PC)
         return false;
     OBJStructDx* pObjDx = (OBJStructDx*)((OBJStruct*)*ppObj_PC);
@@ -3829,7 +4803,8 @@ bool SetPcPositionVector() {
 
 //_______________________
 void PC_ScanLineOfSight() {
-    
+    if (!isGameMode)
+        return;
     if (!FOG_OF_WAR)
         return;
     if (!*ppObj_PC)
@@ -3927,19 +4902,31 @@ void DrawMapChanges(RECT* pRect, LONG level, DWORD flags) {
         mapLightChange = false;
     }
 
-    if (flags & FLG_Floor) {
+    if (flags & FLG_Hud_Outline) {
+        GameArea_ClearHUD_Outline_Rect(pGameArea_Current, &rect, level, flags);
+        //GameArea_DrawFloorRect_Outlines(pGameArea_Current, &rect, level, flags);
+    }
+    if (flags & FLG_Floor || flags & FLG_Hud_Outline) {
         GameArea_DrawFloorRect(pGameArea_Current, &rect, level, flags);
     }
+
     if (flags & FLG_Obj || flags & FLG_Hud_Outline) {
-        GameArea_ClearHUD_Outline_Rect(pGameArea_Current, &rect, level, flags);
+        //GameArea_ClearHUD_Outline_Rect(pGameArea_Current, &rect, level, flags);
         GameArea_DrawObjectRect(pGameArea_Current, &rect, level, flags);
     }
-    if (flags & FLG_Roof) {
+    if ((flags & FLG_Roof) || (flags & FLG_Hud_Outline)) {
+        GameArea_DrawRoofRect_Mapper(pGameArea_Current, &rect, level, flags);
     }
     if (flags & FLG_Hud) {
         GameArea_ClearHUDRect(pGameArea_Current, &rect, level, flags);
         GameArea_Draw_FloatingText(pGameArea_Current, &rect, level, flags);
 
+    }
+
+    if (flags & FLG_Hud_Outline) {
+        //mapper stuff
+        GameArea_DrawAreaOutlines(pGameArea_Current, &rect, level);
+        GameArea_DrawSelectingRectOutline(pGameArea_Current, &rect, level);
     }
 }
 
@@ -4289,7 +5276,7 @@ void __declspec(naked) delete_obj_dx_ptr(void) {
 
 //_________________________________
 void SetAmbientLight_ShaderEffect() {
-
+    static float ambientLightIntensity_old = 0;
     float intensity = (float)GetAmbientLightIntensity() / 65536.0f;
     mapData.AmbientLight = { 1.0f * intensity, 1.0f * intensity, 1.0f * intensity, 1.0f };
     pPS_BuffersFallout->UpdateMapBuff(&mapData);
@@ -4379,10 +5366,91 @@ LONG SetViewPosition_Hex(LONG hexNum, DWORD flags) {
     LONG scrnY = newPosY + (game_PortalHeight >> 1) + EDGE_OFF_Y;
     if (SetViewHexNum(scrnX, scrnY)) {
         pGameArea_Current->SetPosition((float)-newPosX, (float)-newPosY);
+        Mapper_UpdateScrollBarPositions();
         rcGame_PORTAL = { newPosX, newPosY, newPosX + game_PortalWidth, newPosY + game_PortalHeight };
         PS_UpdatePortalDimensions();
         ResetZoomLevel();
-        DrawObjOutlines(*pMAP_LEVEL);
+        //DrawObjOutlines(*pMAP_LEVEL);
+        DrawMapChanges(nullptr, *pMAP_LEVEL, FLG_Hud_Outline);
+    }
+
+    if (flags & 0x4)// & 0x1) {//draw flag was previously 0x1 but is generally unnecessary, so most calls from exe can be ignored.
+        DrawMapChanges(nullptr, *pMAP_LEVEL, FLG_Floor | FLG_Obj | FLG_Roof | FLG_Hud);
+
+    return 0;
+}
+
+
+
+//___________________________________________________________________
+LONG SetViewPosition_Hex_Unbound(LONG hex_x, LONG hex_y, DWORD flags) {
+
+    //if (hexNum < 0 || hexNum > *pNUM_HEXES)
+    //    return -1;
+    LONG sqrX = 0;
+    LONG sqrY = 0;
+    Hex2Sqr_Scroll(hex_x, hex_y, &sqrX, &sqrY);
+
+    GAME_AREA* pCurrent_temp = pGameArea_Current;
+
+    GameAreas_Set_Current_Area_Hex(hex_x, hex_y);
+    if (!pGameArea_Current) { //set the view hex even if no area is set, as this can be set before edges are loaded - position is then set in GameAreas_Load(const char* MapName).
+        SetViewHexNum(sqrX, sqrY);
+        return 0;
+    }
+    if (pGameArea_Current != nullptr && pCurrent_temp != pGameArea_Current) {
+        SetAmbientLight_ShaderEffect();
+        DrawMapChanges(nullptr, *pMAP_LEVEL, FLG_Floor | FLG_Obj | FLG_Roof | FLG_Hud);
+    }
+
+    LONG newPosX = sqrX - (game_PortalWidth >> 1) - EDGE_OFF_X;
+    LONG newPosY = sqrY - (game_PortalHeight >> 1) - EDGE_OFF_Y;
+
+    if (newPosX == rcGame_PORTAL.left && newPosY == rcGame_PORTAL.top)
+        return 0;
+
+    if (*pSCROLL_BLOCK_FLAG) {
+        if (pGameArea_Current->width > game_PortalWidth) {
+            if (newPosX <= pGameArea_Current->rect.left) {
+                newPosX = pGameArea_Current->rect.left;
+                EDGE_OFF_X = -EDGE_X_DIFF;
+            }
+            else if (newPosX >= pGameArea_Current->rect.right - game_PortalWidth) {
+                newPosX = pGameArea_Current->rect.right - game_PortalWidth;
+                EDGE_OFF_X = EDGE_X_DIFF;
+            }
+        }
+        else {
+            LONG edgeWidth = ((game_PortalWidth - pGameArea_Current->width) >> 1);
+            newPosX = pGameArea_Current->rect.left - (edgeWidth);
+        }
+
+        if (pGameArea_Current->height > game_PortalHeight) {
+            if (newPosY <= pGameArea_Current->rect.top) {
+                newPosY = pGameArea_Current->rect.top;
+                EDGE_OFF_Y = -EDGE_Y_DIFF;
+            }
+            else if (newPosY >= pGameArea_Current->rect.bottom - game_PortalHeight) {
+                newPosY = pGameArea_Current->rect.bottom - game_PortalHeight;
+                EDGE_OFF_Y = EDGE_Y_DIFF;
+            }
+        }
+        else {
+            LONG edgeHeight = (game_PortalHeight - pGameArea_Current->height) >> 1;
+            newPosY = pGameArea_Current->rect.top - (edgeHeight);
+        }
+    }
+
+    LONG scrnX = newPosX + (game_PortalWidth >> 1) + EDGE_OFF_X;
+    LONG scrnY = newPosY + (game_PortalHeight >> 1) + EDGE_OFF_Y;
+    if (SetViewHexNum(scrnX, scrnY)) {
+        pGameArea_Current->SetPosition((float)-newPosX, (float)-newPosY);
+        Mapper_UpdateScrollBarPositions();
+        rcGame_PORTAL = { newPosX, newPosY, newPosX + game_PortalWidth, newPosY + game_PortalHeight };
+        PS_UpdatePortalDimensions();
+        ResetZoomLevel();
+        //DrawObjOutlines(*pMAP_LEVEL);
+        DrawMapChanges(nullptr, *pMAP_LEVEL, FLG_Hud_Outline);
     }
 
     if (flags & 0x4)// & 0x1) {//draw flag was previously 0x1 but is generally unnecessary, so most calls from exe can be ignored.
@@ -4474,9 +5542,11 @@ LONG MapScroller(LONG xMove, LONG yMove) {
         LONG scrnY = newPosY + (game_PortalHeight >> 1) + EDGE_OFF_Y;
         if (SetViewHexNum(scrnX, scrnY)) {
             pGameArea_Current->SetPosition((float)-newPosX, (float)-newPosY);
+            Mapper_UpdateScrollBarPositions();
             rcGame_PORTAL = { newPosX, newPosY, newPosX + game_PortalWidth, newPosY + game_PortalHeight };
             PS_UpdatePortalDimensions();
-            DrawObjOutlines(*pMAP_LEVEL);
+            //DrawObjOutlines(*pMAP_LEVEL);
+            DrawMapChanges(nullptr, *pMAP_LEVEL, FLG_Hud_Outline);
             return 0;
         }
     }
@@ -4690,10 +5760,15 @@ void Modifications_Dx_Game_MULTI() {
     FuncWrite32(0x4826C1, 0x55575651, (DWORD)&map_scroller);
 
     //add extra space in object struct to store pointer to dx obj--------------
-    MemWrite8(0x488F77, 0x84, sizeof(OBJStructDx));
+    MemWrite32(0x488F77, 0x84, sizeof(OBJStructDx));
     FuncReplace32(0x488F7C, 0x03CB50, (DWORD)&allocate_mem_obj);
-    MemWrite8(0x48D782, 0x84, sizeof(OBJStructDx));
-    MemWrite8(0x48D792, 0x84, sizeof(OBJStructDx));
+    MemWrite32(0x48D782, 0x84, sizeof(OBJStructDx));
+    MemWrite32(0x48D792, 0x84, sizeof(OBJStructDx));
+
+    //in copy object func
+    //number of 4 byte chunks to copy between objects. Includes light colour, minus 1 to exclude the FRMobj pointer which we want to remain null.
+    MemWrite32(0x489D41, 0x21, (sizeof(OBJStructDx)/4)-1);
+
 
     //delete obj
     FuncReplace32(0x48DAFA, 0x038126, (DWORD)&delete_obj_dx_ptr);

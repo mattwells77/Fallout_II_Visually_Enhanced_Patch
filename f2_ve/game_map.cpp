@@ -68,6 +68,80 @@ static char ve_pro_file_header_text[]{ "VE_PROTO" };
 #define ve_pro_file_version 1
 
 
+//_________________________________________________
+DWORD GameMap_GetTileData(LONG tileNum, LONG level) {
+
+    if (level < 0 || level>2)
+        return 0x00010001;
+    if (tileNum < 0 || tileNum >= *pNUM_TILES)
+        return 0x00010001;
+
+    DWORD** levelOffset = *pMapTileLevelOffset;
+    return levelOffset[level][tileNum];
+}
+
+
+//_______________________________________________________________
+void GameMap_SetTileData(LONG tileNum, LONG level, DWORD tileDat) {
+    DWORD** levelOffset = *pMapTileLevelOffset;
+    levelOffset[level][tileNum] = tileDat;
+}
+
+
+//_____________________________________________________________________________________
+DWORD GameMap_GetTileFrmID(LONG tileNum, LONG level, BOOL isRoof, DWORD* pRetTileFlags) {
+    DWORD tile_data = GameMap_GetTileData(tileNum, level);
+    if (isRoof)
+        tile_data >>= 16;
+
+    //sfall MoreTiles
+    if (SFALL_MoreTiles) {
+        if (pRetTileFlags)
+            *pRetTileFlags = (tile_data & 0x0000C000) >> 14;
+        return 0x04000000 | (tile_data & 0x00003FFF);
+    }
+    else {
+        if (pRetTileFlags)
+            *pRetTileFlags = (tile_data & 0x0000F000) >> 12;
+        return 0x04000000 | (tile_data & 0x00000FFF);
+    }
+}
+
+
+//___________________________________________________________________________
+BOOL GameMap_SetTileFrmID(LONG tileNum, LONG level, BOOL isRoof, DWORD frmID) {
+    
+    LONG type = ((0x0F000000 & frmID) >> 24);
+    if (type != ART_TILES)
+        return FALSE;
+
+    DWORD data_mask = 0;
+    LONG frm_lst_num = frmID & 0x00FFFFFF;
+    if (SFALL_MoreTiles) {
+        if(frm_lst_num > 0x00003FFF)
+            return FALSE;
+        data_mask = 0x00003FFF;
+    }
+    else  {
+        if (frm_lst_num > 0x00000FFF)
+            return FALSE;
+        data_mask = 0x00000FFF;
+    }
+
+    DWORD tile_data = GameMap_GetTileData(tileNum, level);
+    //Fallout_Debug_Info("GameMap_SetTileFrmID, tiledata old:%X", tile_data);
+    if (isRoof) {
+        data_mask <<= 16;
+        frm_lst_num <<= 16;
+    }
+
+    tile_data = (tile_data & ~data_mask) | frm_lst_num;
+    GameMap_SetTileData(tileNum, level, tile_data);
+    //Fallout_Debug_Info("GameMap_SetTileFrmID, tiledata new:%X", tile_data);
+    return TRUE;
+}
+
+
 
 /*
 LONG GetHexDirection(LONG hexStart, LONG hexEnd) {
@@ -144,6 +218,20 @@ bool HexNumToHexPos(LONG hexPos, LONG* x, LONG* y) {//Converts hex Number to hex
 
     *y = hexPos / *pNUM_HEX_X;
     *x = hexPos % *pNUM_HEX_X;
+
+    return true;
+}
+
+
+//_________________________________________________
+bool HexPosToHexNum(LONG* p_hexPos, LONG x, LONG y) {//Converts hex XY coordinates to hex Number
+    
+    *p_hexPos = y * *pNUM_HEX_X + x;
+
+    if (x < 0 || x >= *pNUM_HEX_X)
+        return false;
+    if (y < 0 || y >= *pNUM_HEX_Y)
+        return false;
 
     return true;
 }
@@ -347,6 +435,30 @@ LONG SqrToHexNum_GameOffset(LONG x, LONG y) {//Converts rectangular XY coordinat
 }
 
 
+//_____________________________________________________________
+LONG SqrToHexPos_GameOffset(LONG x, LONG y, LONG* px, LONG* py) {//Converts rectangular XY coordinates in pixels to hex number - with xy offsets needed by game functions
+
+    x *= -1;
+
+    //offsets needed in game
+    x += 16;
+    y += 8;
+
+    x >>= 5;///32;
+    y /= 12;
+    LONG xHex = x + (y >> 1);
+    x = xHex & 0xFFFFFFFE;//sub odd numbers
+    LONG yHex = y - (x >> 1);
+
+    *px = xHex;
+    *py = yHex;
+
+    if (xHex >= *pNUM_HEX_X || xHex < 0 || yHex >= *pNUM_HEX_Y || yHex < 0)
+        return -1;
+
+    return yHex * *pNUM_HEX_X + xHex;
+}
+
 //__________________________________________________________
 LONG HexNumToSqr_GameOffset(LONG hexNum, LONG* px, LONG* py) {//Converts hex number to rectangular XY coordinates in pixels - with xy offsets needed by game functions
     if (hexNum < 0 || hexNum >= *pNUM_HEXES)
@@ -368,6 +480,21 @@ LONG HexNumToSqr_GameOffset(LONG hexNum, LONG* px, LONG* py) {//Converts hex num
     return 0;
 }
 
+
+//__________________________________________________________
+LONG HexToSqr_GameOffset(LONG x, LONG y, LONG* px, LONG* py) {//Converts hex XY to rectangular XY coordinates in pixels - with xy offsets needed by game functions
+ 
+    *py = y + (x >> 1);
+    *px = (x << 1) - *py;
+    *px = -*px * 16;//sign change
+    *py = *py * 12;
+
+    //offsets needed in game
+    *px -= 16;
+    *py -= 8;
+
+    return 0;
+}
 
 
 //_______________________________
@@ -402,6 +529,70 @@ void TileToSqr(LONG tileNum, LONG* px, LONG* py) {//Converts floor tile number t
     y += y;
     *py = (y + x) * 12;
     *px = -(x * 3 - y) * 16;//sign changed
+}
+
+
+//________________________________________________
+void TileToSqr(LONG x, LONG y, LONG* px, LONG* py) {//Converts floor tile XY to rectangular XY coordinates in pixels
+    y += y;
+    *py = (y + x) * 12;
+    *px = -(x * 3 - y) * 16;//sign changed
+}
+
+
+//_____________________________________________________
+bool TileNumToTilePos(LONG tileNum, LONG* px, LONG* py) {
+    if (tileNum < 0 || tileNum >= *pNUM_TILES)
+        return false;
+
+    LONG xMax = *pNUM_TILE_X;
+    *py = tileNum / xMax;
+    *px = tileNum % xMax;
+
+    return true;
+}
+
+
+//____________________________________________________
+bool TilePosToTileNum(LONG *p_tileNum, LONG x, LONG y) {
+    
+    *p_tileNum = y * *pNUM_TILE_X + x;
+
+    if (x < 0 || x >= *pNUM_TILE_X)
+        return false;
+    if (y < 0 || y >= *pNUM_TILE_Y)
+        return false;
+    if (*p_tileNum < 0 || *p_tileNum >= *pNUM_TILES)
+        return false;
+
+    return true;
+}
+
+
+//________________________________________________________
+bool SqrToTile(LONG x, LONG y, LONG* pTileX, LONG* pTileY) {//Converts rectangular XY coordinates in pixels to floor tile number
+    if (!pTileX || !pTileY)
+        return false;
+
+    *pTileX = x * 3 - y * 4;
+
+    if (*pTileX < 0)
+        *pTileX = (*pTileX + 1) / 192 - 1;
+    else
+        *pTileX = *pTileX / 192;
+    *pTileX *= -1;//sign changed
+
+    *pTileY = x + y * 4;
+
+    if (*pTileY < 0)
+        *pTileY = ((*pTileY + 1) / 128) - 1;
+    else
+        *pTileY = *pTileY / 128;
+
+    if (*pTileX >= *pNUM_TILE_X || *pTileX < 0 || *pTileY >= *pNUM_TILE_Y || *pTileY < 0)
+        return false;
+
+    return true;
 }
 
 
@@ -466,6 +657,28 @@ void TileToSqr_Roof_GameOffsets(LONG tileNum, LONG* px, LONG* py) {//Converts ro
     *py -= 96;
 }
 
+
+//_______________________________________________
+void SqrToIso(LONG x, LONG y, LONG* px, LONG* py) {//Converts rectangular XY coordinates in pixels to isometric XY coordinates
+    //x and y values are scaled out to the nearest product (96) of 32 x-step and 12 y-step, to avoid loss in the conversion.
+    x *= -3;
+    y <<= 3;
+    *px = x + (y >> 1);
+    x = *px & 0xFFFFFFE0;//sub odd hex numbers, round down to last multiple of 32
+    *py = y - (x >> 1);
+}
+
+
+//_______________________________________________
+void IsoToSqr(LONG x, LONG y, LONG* px, LONG* py) {//Converts isometric XY coordinates to rectangular XY coordinates in pixels
+    //x and y values are scaled out to the nearest product (96) of 32 x-step and 12 y-step, to avoid loss in the conversion.
+    *py = y + (x >> 1);
+    *px = (x << 1) - *py;
+    *px /= -6;
+    *py >>= 3;
+}
+
+
 /*
 //________________________________________________
 LONG ScrnSqr2HexPosMove(LONG x, LONG y, bool axis) {
@@ -503,7 +716,7 @@ LONG ScrnSqr2HexPosMove(LONG x, LONG y, bool axis) {
 }
 */
 
-
+/*
 //______________________________________
 bool SetViewHexNum(LONG xSqu, LONG ySqu) {
 
@@ -539,6 +752,60 @@ bool SetViewHexNum(LONG xSqu, LONG ySqu) {
     }
     return true;
 }
+*/
+
+//______________________________________
+bool SetViewHexNum(LONG xSqu, LONG ySqu) {
+
+    LONG xHex = 0;
+    LONG yHex = 0;
+
+    SqrToHex_Scroll(xSqu, ySqu, &xHex, &yHex);
+
+
+    //allow view centre to go beyond valid map hexes
+    //*pVIEW_HEXPOS needs to be valid as it is still used by some fallout functions to se default pc posiyion etc.
+    // other variables set here are no longer used by fallout exe
+    // *pVIEW_HEX_X and *pVIEW_HEX_Y are used in fve function "IsHexVisible(LONG hexPos)"
+    
+    //if (xHex < 0 || xHex >= *pNUM_HEX_X || yHex < 0 || yHex >= *pNUM_HEX_Y)
+    //    return false;
+
+    *pVIEW_SQU_HEX_X = ((game_PortalWidth - 32) >> 1) + EDGE_OFF_X;
+    *pVIEW_SQU_HEX_Y = ((game_PortalHeight - 16) >> 1) + EDGE_OFF_Y;
+
+    *pVIEW_HEX_X = xHex;
+    *pVIEW_HEX_Y = yHex;
+
+    if ((*pVIEW_HEX_X & 0x1)) {
+        *pVIEW_HEX_X -= 1;
+        *pVIEW_SQU_HEX_X -= 32;
+    }
+
+
+    // find the closest valid hex position.
+    if (xHex < 0)
+        xHex = 0;
+    else if (xHex >= *pNUM_HEX_X)
+        xHex = *pNUM_HEX_X - 1;
+    if (yHex < 0)
+        yHex = 0;
+    else if (yHex >= *pNUM_HEX_Y)
+        yHex = *pNUM_HEX_Y - 1;
+    *pVIEW_HEXPOS = yHex * *pNUM_HEX_X + xHex;
+
+    *pVIEW_TILE_X = *pVIEW_HEX_X >> 1;
+    *pVIEW_TILE_Y = *pVIEW_HEX_Y >> 1;
+
+    *pVIEW_SQU_TILE_X = *pVIEW_SQU_HEX_X - 16;
+    *pVIEW_SQU_TILE_Y = *pVIEW_SQU_HEX_Y - 2;
+
+    if ((*pVIEW_HEX_Y & 0x1)) {
+        *pVIEW_SQU_TILE_Y -= 12;
+        *pVIEW_SQU_TILE_X -= 16;
+    }
+    return true;
+}
 
 
 //___________________________________
@@ -549,6 +816,28 @@ bool isHexWithinMapEdges(LONG hexPos) {
     LONG tmp_x = 0;
 
     HexNumToSqr(hexPos, &tmp_x, &tmp_y);
+
+    LONG winX = game_PortalWidth / 2 - EDGE_OFF_X;
+    LONG winY = game_PortalHeight / 2 - EDGE_OFF_Y;
+
+    GAME_AREA* pGameArea = GameAreas_GetCurrentArea();
+    if (!pGameArea)
+        return false;
+    if (tmp_x > pGameArea->rect.left && tmp_x < pGameArea->rect.right && tmp_y > pGameArea->rect.top && tmp_y < pGameArea->rect.bottom)
+        return true;
+    else
+        return false;
+}
+
+
+//______________________________________________
+bool isHexWithinMapEdges(LONG hex_x, LONG hex_y) {
+
+
+    LONG tmp_y = 0;
+    LONG tmp_x = 0;
+
+    HexToSqr(hex_x, hex_y, &tmp_x, &tmp_y);
 
     LONG winX = game_PortalWidth / 2 - EDGE_OFF_X;
     LONG winY = game_PortalHeight / 2 - EDGE_OFF_Y;
@@ -1099,7 +1388,8 @@ void MarkVisibleWalls(OBJStruct* objViewer, OBJStruct* objWall) {
 //Check is object is visible to PC. returns 1=display normaly, 0=display but darken, -1=dont display.
 //_________________________________
 int IsVisibleByPCDx(OBJStruct* obj) {
-
+    if (!isGameMode)
+        return 1;
     if (!FOG_OF_WAR || !isRecordingObjFog) {
         obj->flags = obj->flags | FLG_MarkedByPC;
         return 1;
@@ -1215,7 +1505,7 @@ DWORD CheckAngledRoofTileEdge(LONG xPos, LONG yPos, DWORD tileLstNum) {
         GAME_AREA* pGameArea = GameAreas_GetCurrentArea();
         if (!pGameArea)
             return -1;
-        if (xPos > pGameArea->tileLimits.west + 2 || xPos < pGameArea->tileLimits.east + 2 || yPos > pGameArea->tileLimits.south + 3 || yPos < pGameArea->tileLimits.north + 3) {
+        if (xPos > pGameArea->tileLimits.left + 2 || xPos < pGameArea->tileLimits.right + 2 || yPos > pGameArea->tileLimits.bottom + 3 || yPos < pGameArea->tileLimits.top + 3) {
             // imonitorInsertText("tile beyond angled edges");
             return -1;
         }
@@ -1288,7 +1578,7 @@ bool IsNotFogged(OBJStruct* obj) {
 
 
 
-//find the object who's frm lies under mouse cursor.
+//list objects with unmasked pixels under mouse cursor. type(0-5) or type(-1)list all types. *lpObjInfoArray must be destroyed after use with fall_Mem_Deallocate function.
 //_________________________________________________________________________________________
 LONG GetObjectsAtPos(LONG xPos, LONG yPos, LONG level, LONG type, OBJInfo** lpObjInfoArray) {
 
@@ -1409,6 +1699,39 @@ DWORD VE_PROTO_Get_Light_Colour(PROTO* pPro) {
 }
 
 
+//_______________________________________________
+DWORD* VE_PROTO_Get_Light_Colour_Ptr(PROTO* pPro) {
+    PROTO_DX* pProDx = (PROTO_DX*)pPro;
+    if (!pProDx)
+        return 0;
+    DWORD* p_light_colour = nullptr;
+    int type = pProDx->item.proID >> 24;
+    switch (type) {
+    case ART_ITEMS:
+        p_light_colour = &pProDx->item.light_colour;
+        break;
+    case ART_CRITTERS:
+        p_light_colour = &pProDx->critter.light_colour;
+        break;
+    case ART_SCENERY:
+        p_light_colour = &pProDx->scenery.light_colour;
+        break;
+    case ART_WALLS:
+        p_light_colour = &pProDx->wall.light_colour;
+        break;
+    case ART_TILES:
+        p_light_colour = &pProDx->tile.light_colour;
+        break;
+    case ART_MISC:
+        p_light_colour = &pProDx->misc.light_colour;
+        break;
+    default:
+        break;
+    }
+    return p_light_colour;
+}
+
+
 //___________________________________________________________
 bool VE_PROTO_LightColour_Read(const char* path, PROTO* pPro) {
     if (!pPro)
@@ -1480,6 +1803,62 @@ bool VE_PROTO_LightColour_Read(const char* path, PROTO* pPro) {
     //Fallout_Debug_Info("Proto_File_Close_For_Reading to:%s", path);
     return true;
 }
+
+
+//____________________________________________________________
+bool VE_PROTO_LightColour_Write(const char* path, PROTO* pPro) {
+    if (!pPro)
+        return false;
+
+    PROTO_DX* pProDx = (PROTO_DX*)pPro;
+    DWORD colour = 0x00FFFFFF;
+    int type = pProDx->item.proID >> 24;
+    switch (type) {
+    case ART_ITEMS:
+        colour = pProDx->item.light_colour;
+        break;
+    case ART_CRITTERS:
+        colour = pProDx->critter.light_colour;
+        break;
+    case ART_SCENERY:
+        colour = pProDx->scenery.light_colour;
+        break;
+    case ART_WALLS:
+        colour = pProDx->wall.light_colour;
+        break;
+    case ART_TILES:
+        colour = pProDx->tile.light_colour;
+        break;
+    case ART_MISC:
+        colour = pProDx->misc.light_colour;
+        break;
+    default:
+        break;
+    }
+
+    char path_vep[MAX_PATH];
+
+    sprintf_s(path_vep, MAX_PATH, "%s", path);
+    char* p_ext = strrchr(path_vep, '.');
+    if (!p_ext)
+        return false;
+    strcpy_s(p_ext, 5, ".vep");
+
+    void* FileStream = fall_fopen(path_vep, "wb");
+
+    if (!FileStream) 
+        return false;
+    
+    fall_fwrite(ve_pro_file_header_text, sizeof(ve_pro_file_header_text) - 1, 1, FileStream);
+    fall_fwrite32_BE(FileStream, ve_pro_file_version);
+
+    fall_fwrite32_BE(FileStream, colour);
+
+    fall_fclose(FileStream);
+
+    return true;
+}
+
 
 //_______________________________________________________________
 bool VE_MAP_CopyFiles(const char* pFromPath, const char* pToPath) {
@@ -1579,13 +1958,24 @@ bool VE_MAP_Open_WRITE(const char* path, void* FileStream_MAP) {
     FileStream_MAP_SAVE = FileStream_MAP;
     if (!FileStream_MAP_SAVE)
         return false;
-
+    //Fallout_Debug_Info("VE_MAP_Open_WRITE map path:%s", path);
     char mapPath[256];
-    sprintf_s(mapPath, 256, "%s", path);
+    //sprintf_s(mapPath, 256, "%s", path);
+    strcpy_s(mapPath, path);
     char* p_ext = strrchr(mapPath, '.');
 
     if (p_ext) {
-        strcpy_s(p_ext, 5, ".ves");
+        for (int i = 0; i < _countof(mapPath); i++)
+            mapPath[i] = tolower(mapPath[i]);
+
+        if (strcmp(p_ext, ".map") == 0)
+            strcpy_s(p_ext, 5, ".vem");
+        else if (strcmp(p_ext, ".sav") == 0)
+            strcpy_s(p_ext, 5, ".ves");
+        else {
+            Fallout_Debug_Error("VE_MAP_Open_WRITE invalid extension: %s", mapPath);
+            return false;
+        }
         FileStream_MAP_SAVE_VE = fall_fopen(mapPath, "wb");
     }
 
@@ -1615,21 +2005,33 @@ bool VE_MAP_Open_READ(const char* path, void* FileStream_MAP) {
         return false;
 
     char mapPath[256];
-    sprintf_s(mapPath, 256, "%s", path);
+    //sprintf_s(mapPath, 256, "%s", path);
+    strcpy_s(mapPath, path);
     char* p_ext = strrchr(mapPath, '.');
 
     if (p_ext) {
-        strcpy_s(p_ext, 5, ".ves");
+        for (int i = 0; i < _countof(mapPath); i++)
+            mapPath[i] = tolower(mapPath[i]);
+
+        if (strcmp(p_ext, ".map") == 0)
+            strcpy_s(p_ext, 5, ".vem");
+        else if (strcmp(p_ext, ".sav") == 0)
+            strcpy_s(p_ext, 5, ".ves");
+        else {
+            Fallout_Debug_Error("VE_MAP_Open_READ invalid extension: %s", mapPath);
+            return false;
+        }
+        //strcpy_s(p_ext, 5, ".ves");
         FileStream_MAP_LOAD_VE = fall_fopen(mapPath, "rb");
         //if no ".ves" saved data found try opening ".vem" map start data.
-        if (!FileStream_MAP_LOAD_VE) {
-            strcpy_s(p_ext, 5, ".vem");
-            FileStream_MAP_LOAD_VE = fall_fopen(mapPath, "rb");
-        }
+        //if (!FileStream_MAP_LOAD_VE) {
+        //    strcpy_s(p_ext, 5, ".vem");
+        //    FileStream_MAP_LOAD_VE = fall_fopen(mapPath, "rb");
+        //}
     }
 
     if (!FileStream_MAP_LOAD_VE) {
-        //Fallout_Debug_Error("VE_MAP_Open_READ failed: %s", mapPath);
+        Fallout_Debug_Error("VE_MAP_Open_READ failed: %s", mapPath);
         return false;
     }
 
@@ -1801,6 +2203,9 @@ bool LightColour_Read(void* FileStream, OBJStruct* pObj) {
     fall_fread32_BE(FileStream_VE, &objID);
     DWORD colour = 0;
     fall_fread32_BE(FileStream_VE, &colour);
+
+    //Note to self: sfall reassigns critter ids on load in one of its fixes, which makes maps saved with the internal mapper(but otherwise unmodified) different from those in the dat.
+    //to create ves files compatible with maps in the dat, disable sfall before opening and saving.
     if (objID != pObj->objID) {
         Fallout_Debug_Error("LightColour_Read failed obj_id mismatch ves:%d, obj:%d", objID, pObj->objID);
         return false;

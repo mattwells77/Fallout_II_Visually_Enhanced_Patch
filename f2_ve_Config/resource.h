@@ -24,6 +24,7 @@
 #define IDS_VERSION4                    146
 #define IDS_VERSION5                    147
 #define IDS_FOG_EFFECT0                 148
+#define IDS_TEXT_ITEMS                  149
 #define IDC_TEXT_SCALE_LEVEL            1000
 #define IDC_BUTTON_CONFIG_EDIT          1001
 #define IDC_CHECK_MAP_FLOOR_LIGHT       1002

@@ -22,6 +22,15 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+
+struct POINTERstate {
+    LONG x;
+    LONG y;
+    WORD flags;
+};
+extern POINTERstate pointerState;
+
+extern HWND* phWinMain;
 extern HWND hGameWnd;
 
 extern LONG scaleLevel_GUI;
@@ -30,13 +39,13 @@ extern float scaleGame_RO;
 
 extern float scaleSubUnit;
 
-extern BOOL *p_is_winActive;
+//extern BOOL *p_is_winActive;
 extern RECT *pFALL_RC;
 
 extern bool isGameMode;
 extern bool isAltMouseInput;
 extern bool isMapperExiting;
-extern bool isMapperSelecting;
+//extern bool isMapperSelecting;
 extern bool isMapperScrolling;
 
 extern LONG SFALL_UseScrollWheel;
@@ -46,16 +55,24 @@ extern bool isMapperSizing;
 extern bool isGrayScale;
 
 
+extern LONG SFALL_UseScrollWheel;
+extern LONG SFALL_MiddleMouse;
+
+#define WIN_MODE_STYLE  WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+extern DWORD winStyle;
+
+
+BOOL Is_WindowActive();
+void Set_WindowActive_State(BOOL isActive);
+
 void WindowVars_Save();
 void WindowVars_Load();
-void SetWindowTitle(HWND hwnd, const char *msg);
+void SetWindowTitle(HWND hwnd, const wchar_t *msg);
 
 int CheckMessages();
 int CheckMessagesNoWait();
 
 void Wait_ms(DWORD delay_ms);
-
-
 
 void GetMousePos(LONG *pXPos, LONG *pYPos);
 LONG GetWinAtPos(LONG xPos, LONG yPos);
@@ -71,3 +88,9 @@ bool IsMouseDoubleClick();
 
 void Fallout_On_Exit();
 
+void Set_Fallout_Screen_Dimensions(DWORD width, DWORD height);
+void SetWindowActivation(BOOL isActive);
+void ClipAltMouseCursor();
+int CheckClientRect();
+
+void fall_WinExit(LONG val);

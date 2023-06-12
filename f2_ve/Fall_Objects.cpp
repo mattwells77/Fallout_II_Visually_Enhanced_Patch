@@ -113,6 +113,8 @@ DWORD* p_combat_state_flags = nullptr;
 
 void* pfall_obj_get_total_caps = nullptr;
 
+void* pfall_obj_inv_add_items = nullptr;
+
 void* pfall_obj_inv_remove_items = nullptr;
 
 void* pfall_obj_item_get_max_ammo = nullptr;
@@ -138,6 +140,232 @@ void* pfall_obj_examine = nullptr;
 void* pfall_obj_item_get_weight = nullptr;
 
 void* pfall_obj_get_script_id = nullptr;
+
+void* pfall_obj_new_script_instance = nullptr;
+
+void* pfall_obj_new_scriptID = nullptr;
+
+void* pfall_obj_copy = nullptr;
+
+void* pfall_obj_clear_inv = nullptr;
+
+void* pfall_obj_disconnect_from_map = nullptr;
+void* pfall_obj_connect_to_map = nullptr;
+
+
+void* pfall_obj_critter_adjust_ac = nullptr;
+
+void* pfall_obj_item_can_weapon_unload = nullptr;
+void* pfall_obj_item_weapon_unload = nullptr;
+
+
+void* pfall_obj_item_can_weapon_load = nullptr;
+void* pfall_obj_item_weapon_load = nullptr;
+
+
+void* pfall_obj_destroy_obj = nullptr;
+
+void* pfall_obj_item_set_current_ammo = nullptr;
+
+
+void* pfall_obj_item_weapon_anim_code = nullptr;
+
+void* pfall_obj_toggle_flat = nullptr;
+
+//________________________________________________________
+LONG fall_Obj_Toggle_Flat(OBJStruct* pObj, RECT* p_rc_ret) {
+    LONG retVal = -1;
+    __asm {
+        mov edx, p_rc_ret
+        mov eax, pObj
+        call pfall_obj_toggle_flat
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_________________________________________________________
+DWORD fall_Obj_Weapon_AnimationCode(OBJStruct* pObj_weapon) {
+    DWORD retVal = 0;
+    __asm {
+        mov eax, pObj_weapon
+        call pfall_obj_item_weapon_anim_code
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_______________________________________________________________
+LONG fall_Obj_Item_SetCurrentAmmo(OBJStruct* pObj, LONG quantity) {
+    LONG retVal = 0;
+    __asm {
+        mov edx, quantity
+        mov eax, pObj
+        call pfall_obj_item_set_current_ammo
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_________________________________________
+LONG fall_Obj_Destroy_InvObj(OBJStruct* pObj) {
+    LONG retVal = -1;
+    __asm {
+        mov eax, pObj
+        call pfall_obj_destroy_obj
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_________________________________________________________________________
+BOOL fall_Obj_Weapon_Can_Load(OBJStruct* pObj_weapon, OBJStruct* pObj_ammo) {
+    BOOL retVal = FALSE;
+    __asm {
+        mov edx, pObj_ammo
+        mov eax, pObj_weapon
+        call pfall_obj_item_can_weapon_load
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________________________________________
+LONG fall_Obj_Weapon_Load(OBJStruct* pObj_weapon, OBJStruct* pObj_ammo) {
+    LONG retVal = 0;
+    __asm {
+        mov edx, pObj_ammo
+        mov eax, pObj_weapon
+        call pfall_obj_item_weapon_load
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________________________
+BOOL fall_Obj_Weapon_Can_Unload(OBJStruct* pObj_weapon) {
+    BOOL retVal = FALSE;
+    __asm {
+        mov eax, pObj_weapon
+        call pfall_obj_item_can_weapon_unload
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_______________________________________________________
+OBJStruct* fall_Obj_Weapon_Unload(OBJStruct* pObj_weapon) {
+    OBJStruct* retVal = nullptr;
+    __asm {
+        mov eax, pObj_weapon
+        call pfall_obj_item_weapon_unload
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+//____________________________________________________________________________________________________________
+LONG fall_Obj_Critter_Adjust_AC(OBJStruct* pObj_critter, OBJStruct* pObj_armor_old, OBJStruct* pObj_armor_new) {
+    LONG retVal = -1;
+    __asm {
+        mov ebx, pObj_armor_new
+        mov edx, pObj_armor_old
+        mov eax, pObj_critter
+        call pfall_obj_critter_adjust_ac
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//________________________________________________________________
+LONG fall_Obj_Disconnect_From_Map(OBJStruct* pObj, RECT* p_rc_ret) {
+    LONG retVal = -1;
+    __asm {
+        mov edx, p_rc_ret
+        mov eax, pObj
+        call pfall_obj_disconnect_from_map
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_____________________________________________________________________________________
+LONG fall_Obj_Connect_To_Map(OBJStruct* pObj, LONG hex_num, LONG level, RECT* p_rc_ret) {
+    LONG retVal = -1;
+    __asm {
+        mov ecx, p_rc_ret
+        mov ebx, level
+        mov edx, hex_num
+        mov eax, pObj
+        call pfall_obj_connect_to_map
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+//__________________________________________
+LONG fall_Obj_Clear_Inventory(PUD* pObj_Pud) {
+    LONG retVal = -1;
+    __asm {
+        mov eax, pObj_Pud
+        call pfall_obj_clear_inv
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//________________________________________________________________
+LONG fall_Obj_Copy(OBJStruct** pObj_out, OBJStruct* pObj_to_copy) {
+    LONG retVal = -1;
+    __asm {
+
+        mov edx, pObj_to_copy
+        mov eax, pObj_out
+        call pfall_obj_copy
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//_______________________________________________________________
+LONG fall_Obj_New_ScriptID(OBJStruct* pObj, DWORD* pret_scriptID) {
+
+    LONG retVal = -1;
+    __asm {
+
+        mov edx, pret_scriptID
+        mov eax, pObj
+        call pfall_obj_new_scriptID
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//__________________________________________________________________________________________
+LONG fall_Obj_New_Script_Instance(OBJStruct* pObj, LONG script_type, LONG script_ref_number) {
+
+    LONG retVal = -1;
+    __asm {
+        mov ebx, script_ref_number
+        mov edx, script_type
+        mov eax, pObj
+        call pfall_obj_new_script_instance
+        mov retVal, eax
+    }
+    return retVal;
+}
 
 
 //___________________________________________
@@ -260,6 +488,20 @@ LONG fall_Obj_Item_GetCurrentAmmo(OBJStruct* pObj) {
     __asm {
         mov eax, pObj
         call pfall_obj_item_get_current_ammo
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//___________________________________________________________________________________________
+LONG fall_Obj_Inventory_AddItems(OBJStruct* pObj_Owner, OBJStruct* pObj_Item, LONG num_items) {
+    LONG retVal = 0;
+    __asm {
+        mov ebx, num_items
+        mov edx, pObj_Item
+        mov eax, pObj_Owner
+        call pfall_obj_inv_add_items
         mov retVal, eax
     }
     return retVal;
@@ -1077,6 +1319,8 @@ void Fallout_Functions_Setup_Objects() {
 
         pfall_obj_get_total_caps = (void*)FixAddress(0x47A6A8);
 
+        
+        pfall_obj_inv_add_items = (void*)FixAddress(0x4772B8);
         pfall_obj_inv_remove_items = (void*)FixAddress(0x477490);
 
         pfall_obj_item_get_max_ammo = (void*)FixAddress(0x478674);
@@ -1096,6 +1340,46 @@ void Fallout_Functions_Setup_Objects() {
         pfall_obj_examine = (void*)FixAddress(0x49AD88);
 
         pfall_obj_item_get_weight = (void*)FixAddress(0x477B88);
+
+        pfall_obj_new_script_instance = (void*)FixAddress(0x49AAC0);
+
+        pfall_obj_new_scriptID = (void*)FixAddress(0x49A9B4);
+
+        pfall_obj_copy = (void*)FixAddress(0x489CCC);
+
+        pfall_obj_clear_inv = (void*)FixAddress(0x48B1B0);
+
+        pfall_obj_disconnect_from_map = (void*)FixAddress(0x489F34);
+        pfall_obj_connect_to_map = (void*)FixAddress(0x489EC4);
+
+
+        //00478874 / $  53            PUSH EBX; fallout2.item_w_can_reload_(EAX pObj_weapon, EDX pObj_ammo ? )(guessed void)
+        //00478918 / $  53            PUSH EBX; fallout2.ITEM_W_RELOAD(EAX pOBJ_weapon, EDX pObj_ammo ? )(guessed void)
+        pfall_obj_item_can_weapon_load = (void*)FixAddress(0x478874);
+        pfall_obj_item_weapon_load = (void*)FixAddress(0x478918);
+
+
+        pfall_obj_item_can_weapon_unload = (void*)FixAddress(0x478EF4);
+        pfall_obj_item_weapon_unload = (void*)FixAddress(0x478F80);
+
+        pfall_obj_item_weapon_anim_code = (void*)FixAddress(0x478DA8);
+        //
+        // 
+        //0047650C / $  56            PUSH ESI; fallout2.DROP_AMMO_INTO_WEAPON(EAX pObj_weapon, EDX pObj_ammo ? , EBX, ECX, Arg1)(guessed Arg1)
+ 
+        //004715F8 / $  51            PUSH ECX; fallout2.ADJUST_CRITTER_AC(EAX pObj_critter, EDX pObj_armor_old, EBX pObj_armor_new)(guessed void)
+        pfall_obj_critter_adjust_ac = (void*)FixAddress(0x4715F8);
+
+        //0049B9A0 / $ \53            PUSH EBX; fallout2.OBJ_DESTROY_(EAX pObj)(guessed void)
+        pfall_obj_destroy_obj = (void*)FixAddress(0x49B9A0);
+
+
+        //00478714 / $  53            PUSH EBX; fallout2.item_w_set_curr_ammo_(EAX pObj_weapon, EDX quantity ? )(guessed void)
+        pfall_obj_item_set_current_ammo = (void*)FixAddress(0x478714);
+
+
+        //0048AF2C / $  53            PUSH EBX; fallout2.obj_toggle_flat_(EAX* pObj, EDX* p_rect)(guessed void)
+        pfall_obj_toggle_flat = (void*)FixAddress(0x48AF2C);
 
     }
 

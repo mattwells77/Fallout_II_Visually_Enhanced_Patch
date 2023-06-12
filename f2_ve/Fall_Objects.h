@@ -124,12 +124,12 @@ struct ITEMTYPEdata {
 
 
 struct PROTOitem {
-	DWORD proID;//0x00
-	DWORD txtID;//0x04
-	DWORD frmID;//0x08
-	DWORD light_radius;//0x0C
-	DWORD light_intensity;//0x10
-	DWORD flags;//0x14
+	//DWORD proID;//0x00
+	//DWORD txtID;//0x04
+	//DWORD frmID;//0x08
+	//DWORD light_radius;//0x0C
+	//DWORD light_intensity;//0x10
+	//DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
 	DWORD itemType;//0x20
@@ -144,12 +144,12 @@ struct PROTOitem {
 
 
 struct PROTOcritter {
-	DWORD proID;//0x00
-	DWORD txtID;//0x04
-	DWORD frmID;//0x08
-	DWORD light_radius;//0x0C
-	DWORD light_intensity;//0x10
-	DWORD flags;//0x14
+	//DWORD proID;//0x00
+	//DWORD txtID;//0x04
+	//DWORD frmID;//0x08
+	//DWORD light_radius;//0x0C
+	//DWORD light_intensity;//0x10
+	//DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
 	DWORD crittFlags;//0x20
@@ -175,12 +175,12 @@ struct SCENERYTYPEdata {
 
 
 struct PROTOscenery {
-	DWORD proID;//0x00
-	DWORD txtID;//0x04
-	DWORD frmID;//0x08
-	DWORD light_radius;//0x0C
-	DWORD light_intensity;//0x10
-	DWORD flags;//0x14
+	//DWORD proID;//0x00
+	//DWORD txtID;//0x04
+	//DWORD frmID;//0x08
+	//DWORD light_radius;//0x0C
+	//DWORD light_intensity;//0x10
+	//DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
 	DWORD sceneryType;//0x20
@@ -192,12 +192,12 @@ struct PROTOscenery {
 
 
 struct PROTOwall {
-	DWORD proID;//0x00
-	DWORD txtID;//0x04
-	DWORD frmID;//0x08
-	DWORD light_radius;//0x0C
-	DWORD light_intensity;//0x10
-	DWORD flags;//0x14
+	//DWORD proID;//0x00
+	//DWORD txtID;//0x04
+	//DWORD frmID;//0x08
+	//DWORD light_radius;//0x0C
+	//DWORD light_intensity;//0x10
+	//DWORD flags;//0x14
 	DWORD actionFlags;//0x18
 	DWORD scriptID;//0x1C
 	DWORD materialID;//0x20
@@ -205,16 +205,16 @@ struct PROTOwall {
 
 
 struct PROTOtile { // same as misc
-	DWORD proID;//0x00
-	DWORD txtID;//0x04
-	DWORD frmID;//0x08
-	DWORD light_radius;//0x0C
-	DWORD light_intensity;//0x10
-	DWORD flags;//0x14
+	//DWORD proID;//0x00
+	//DWORD txtID;//0x04
+	//DWORD frmID;//0x08
+	//DWORD light_radius;//0x0C
+	//DWORD light_intensity;//0x10
+	//DWORD flags;//0x14
 	DWORD materialID;//0x18  //misc = unknown
 };
 
-
+/*
 union PROTO {
    PROTOitem item;
    PROTOcritter critter;
@@ -222,6 +222,25 @@ union PROTO {
    PROTOwall wall;
    PROTOtile tile;
    PROTOtile misc;
+};
+*/
+
+struct PROTO {
+	DWORD proID;//0x00
+	DWORD txtID;//0x04
+	DWORD frmID;//0x08
+	DWORD light_radius;//0x0C
+	DWORD light_intensity;//0x10
+	DWORD flags;//0x14
+	union {
+		PROTOitem item;
+		PROTOcritter critter;
+		PROTOscenery scenery;
+		PROTOwall wall;
+		PROTOtile tile;
+		PROTOtile misc;
+	};
+
 };
 
 
@@ -342,8 +361,8 @@ struct OBJStruct {
 	  DWORD light_radius;//0x6C //radius in hexes
 	  LONG light_intensity;//0x70
 	  DWORD combatFlags;//0x74
-	  DWORD scriptID1;//0x78
-	  DWORD unknown7C;//0x7C //not read but written but set to 0 on load.
+	  DWORD scriptID;//0x78
+	  OBJStruct* pObj_owner;//0x7C //not read but written but set to 0 on load.
 	  DWORD scriptIndex;//0x80
 };
 
@@ -364,32 +383,38 @@ struct PC_MAP_STATE {
 
 ///OBJStruct.flags-------
 ///ProtoStruct.flags-------
-#define FLG_Disabled       0x00000001 //???
-#define FLG_Flat           0x00000008
-#define FLG_NoBlock        0x00000010
-#define FLG_Emits_light    0x00000020
-#define FLG_MultiHex       0x00000800
-#define FLG_NoHighlight    0x00001000
-#define FLG_TransRed       0x00004000
-#define FLG_TransNone      0x00008000
-#define FLG_TransWall      0x00010000
-#define FLG_TransGlass     0x00020000
-#define FLG_TransSteam     0x00040000
-#define FLG_TransEnergy    0x00080000
-#define FLG_LightThru      0x20000000
-#define FLG_ShootThru      0x80000000
-#define FLG_WallTransEnd   0x10000000
+#define FLG_Disabled		0x00000001 //???
+#define FLG_NonEffect		0x00000004 //Does not react with other objects, not saved to file. Used by mouse hex and spatial script markers in the mapper etc.
+#define FLG_Flat			0x00000008
+#define FLG_NoBlock			0x00000010
+#define FLG_Emits_light		0x00000020
 
-#define FLG_Unknown1       0x08000000 // related to shootThru flag
+#define FLG_Unk00000400		0x00000400
+#define FLG_MultiHex		0x00000800
+#define FLG_NoHighlight		0x00001000
+#define FLG_BeingUsed		0x00002000 //queued item
+#define FLG_TransRed		0x00004000
+#define FLG_TransNone		0x00008000
+#define FLG_TransWall		0x00010000
+#define FLG_TransGlass		0x00020000
+#define FLG_TransSteam		0x00040000
+#define FLG_TransEnergy		0x00080000
+//items
+#define FLG_IsHeldSlot1		0x01000000
+#define FLG_IsHeldSlot2		0x02000000
+#define FLG_IsWornArmor		0x04000000
+#define FLG_Unk08000000		0x08000000 // related to shootThru flag
+
+#define FLG_WallTransEnd	0x10000000
+#define FLG_LightThru		0x20000000
+#define FLG_MarkedByPC		0x40000000
+#define FLG_ShootThru		0x80000000
+
 
 #define FLG_TransAny       0x000FC000 // for checking if any trans flags set
 
 ///OBJStruct.flags-------
-#define FLG_MarkedByPC  0x40000000
-//items
-#define FLG_IsHeldSlot1 0x01000000
-#define FLG_IsHeldSlot2 0x02000000
-#define FLG_IsWornArmor 0x04000000
+
 
 
 ///OBJStruct.combatFlags-------
@@ -404,8 +429,6 @@ struct PC_MAP_STATE {
 #define FLG_IsTransparent       0x40000000 //?
 #define FLG_NonInteractive      0x80000000  //not interactive ?
 
-#define FLG_MapperSelecting     FLG_combatUnk0x04 //renamed for easier ids for mapper
-#define FLG_MapperSelected      FLG_NotVisByPC
 
 
 ///OBJStruct.PUD_CRITTER.COMBAT_DATA.flags-------
@@ -467,6 +490,11 @@ Secondary Attack Type:
     0x00000070 - fire burst
     0x00000080 - fire continuous
 */
+//Weapon Flag:
+
+#define FLG_Weapon_BigGun		0x00000100// - Big Gun(weapon is Big Guns)
+#define FLG_Weapon_TwoHanded	0x00000200// - 2Hnd(Two - handed weapon)
+
 #define FLG_UseOn           0x00001000// - Use On Smth (object can be used on something)
 #define FLG_LookAt          0x00002000// - Look (The critter can be inspected)
 #define FLG_TalkTo          0x00004000// - Talk (You can speak to the critter)
@@ -660,6 +688,7 @@ LONG fall_Obj_GetTotalCaps(OBJStruct* pObj);
 LONG fall_Obj_Inventory_GetTotalWeight(OBJStruct* pObj);
 LONG fall_Obj_Inventory_GetTotalCost(OBJStruct* pObj);
 
+LONG fall_Obj_Inventory_AddItems(OBJStruct* pObj_Owner, OBJStruct* pObj_Item, LONG num_items);
 LONG fall_Obj_Inventory_RemoveItems(OBJStruct* pObj_Owner, OBJStruct* pObj_Item, LONG num_items);
 
 LONG fall_Obj_Item_GetType(OBJStruct* pObj);
@@ -677,3 +706,27 @@ LONG fall_Obj_Examine(OBJStruct* pObj_holder, OBJStruct* pObj_Item, void (*p_fun
 LONG fall_Obj_Item_GetWeight(OBJStruct* pObj);
 
 LONG fall_Obj_GetScriptID(OBJStruct* pObj, DWORD* pScriptID);
+
+LONG fall_Obj_New_Script_Instance(OBJStruct* pObj, LONG script_type, LONG script_ref_number);
+LONG fall_Obj_New_ScriptID(OBJStruct* pObj, DWORD* pret_scriptID);
+LONG fall_Obj_Copy(OBJStruct** pObj_out, OBJStruct* pObj_to_copy);
+LONG fall_Obj_Clear_Inventory(PUD* pObj_Pud);
+LONG fall_Obj_Disconnect_From_Map(OBJStruct* pObj, RECT* p_rc_ret);
+LONG fall_Obj_Connect_To_Map(OBJStruct* pObj, LONG hex_num, LONG level, RECT* p_rc_ret);
+
+LONG fall_Obj_Critter_Adjust_AC(OBJStruct* pObj_critter, OBJStruct* pObj_armor_old, OBJStruct* pObj_armor_new);
+
+BOOL fall_Obj_Weapon_Can_Load(OBJStruct* pObj_weapon, OBJStruct* pObj_ammo);
+//returns remaining ammo
+LONG fall_Obj_Weapon_Load(OBJStruct* pObj_weapon, OBJStruct* pObj_ammo);
+
+OBJStruct* fall_Obj_Weapon_Unload(OBJStruct* pObj_weapon);
+BOOL fall_Obj_Weapon_Can_Unload(OBJStruct* pObj_weapon);
+
+LONG fall_Obj_Destroy_InvObj(OBJStruct* pObj);
+
+LONG fall_Obj_Item_SetCurrentAmmo(OBJStruct* pObj, LONG quantity);
+
+DWORD fall_Obj_Weapon_AnimationCode(OBJStruct* pObj_weapon);
+
+LONG fall_Obj_Toggle_Flat(OBJStruct* pObj, RECT* p_rc_ret);

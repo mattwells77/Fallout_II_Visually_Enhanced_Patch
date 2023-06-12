@@ -34,8 +34,9 @@ LONG *pFloatingText_NumTotal = nullptr;
 FloatingTextObj **lpFloatingText_Obj = nullptr;
 
 
-LONG *pAreRoovesVisible = nullptr;
-LONG *pAreMapHexesVisible = nullptr;
+BOOL* pIsMapperMouse = nullptr;
+BOOL*pAreRoovesVisible = nullptr;
+BOOL *pAreHexesVisible = nullptr;
 
 
 LONG* pMAP_LEVEL = nullptr;
@@ -80,11 +81,19 @@ LONG* pMouseToggleFlag = nullptr;
 
 LONG* pAreObjectsInitiated = nullptr;
 
+MAP_HEADER* p_map_header = nullptr;
 
+void(*fall_game_reset)() = nullptr;
+void(*fall_game_exit)() = nullptr;
 
 void *pfall_FALLOUT2_SETUP = nullptr;
+void* pfall_fallout_init = nullptr;
 
-void *pfall_map_init = nullptr;
+void(*fall_map_init)() = nullptr;
+void (*fall_map_exit)() = nullptr;
+
+void(*fall_map_reset)() = nullptr;
+
 void *pfall_map_load = nullptr;
 void *pfall_map_save = nullptr;
 
@@ -109,6 +118,71 @@ void* pfall_automap_get_short_city_name = nullptr;
 void* pfall_map_save_in_game = nullptr;
 
 void* pfall_map_refresh_lights =nullptr;
+
+void* pfall_map_update_light_map = nullptr;
+
+
+//__________________________
+MAP_HEADER* Get_Map_Header() {
+    return p_map_header;
+}
+
+
+//________________________________
+LONG fall_Map_SetLevel(LONG level) {
+
+    LONG retVal = -1;
+    __asm {
+        mov eax, level
+        call pfall_map_set_level
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//______________________________________________________________________________________________________________________
+LONG fall_Fallout_Initiate(const char* title, BOOL isMapper, LONG font, DWORD flags, DWORD pathLength, const char* path) {
+
+    LONG retVal = -1;
+    __asm {
+        push path
+        push pathLength
+        mov ecx, flags
+        mov ebx, font
+        mov edx, isMapper
+        mov eax, title
+        call pfall_fallout_init
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//___________________________________________
+LONG fall_Map_Load(const char* map_file_name) {
+
+    LONG retVal = 0;
+    __asm {
+        mov eax, map_file_name
+        call pfall_map_load
+        mov retVal, eax
+    }
+    return retVal;
+}
+
+
+//___________________________________________
+LONG fall_Map_Save(const char* map_file_name) {
+
+    LONG retVal = 0;
+    __asm {
+        mov eax, map_file_name
+        call pfall_map_save
+        mov retVal, eax
+    }
+    return retVal;
+}
 
 
 //________________________________________________________________
@@ -169,6 +243,18 @@ void fall_Map_RefreshLights() {
     __asm {
         call pfall_map_refresh_lights
     }
+}
+
+//___________________________________________________________________________________
+LONG fall_Map_UpdateLightMap(OBJStruct* p_obj, LONG add_remove_flag, RECT *p_rc_area) {//add_remove_flag -- 0=add light, 1=remove light. p_rc_area -- optional draw area rect.
+    LONG retVal = 0;
+    __asm {
+        mov ebx, p_rc_area
+        mov edx, add_remove_flag
+        mov eax, p_obj
+        call pfall_map_update_light_map
+    }
+    return retVal;
 }
 
 
@@ -236,15 +322,15 @@ void Fallout_Functions_Setup_GameMap_CH() {
 
 
     pfall_FALLOUT2_SETUP = (void*)0x480140;
-    pfall_map_init = (void*)0x4813E4;
+    fall_map_init = (void (*)())0x4813E4;
 
     pfall_map_load = (void*)0x481E98;
     pfall_map_save = (void*)0x48309C;
 
     pfall_map_set_mapper_mouse = (void*)0x44C140;
 
-    pAreMapHexesVisible = (LONG*)0x52D750;
-    pAreRoovesVisible = (LONG*)0x52D74C;
+    pAreHexesVisible = (BOOL*)0x52D750;
+    pAreRoovesVisible = (BOOL*)0x52D74C;
 
     pfall_map_set_level = (void*)0x481588;
 
@@ -273,6 +359,9 @@ void Fallout_Functions_Setup_GameMap_CH() {
     pfall_automap_get_short_city_name = (void*)0x;
 
     pfall_map_save_in_game = (void*)0x;
+
+    pIsMapperMouse = (BOOL*)0x;
+    pfall_fallout_init = (void*)0x;
 */
 }
 
@@ -320,13 +409,20 @@ void Fallout_Functions_Setup_GameMap_MULTI() {
     pObjViewTextHeight = (LONG*)FixAddress(0x668214);
 
     pfall_FALLOUT2_SETUP = (void*)FixAddress(0x480CC0);
-    pfall_map_init = (void*)FixAddress(0x481FB4);
+    pfall_fallout_init = (void*)FixAddress(0x442580);
+
+    fall_map_init = (void (*)())FixAddress(0x481FB4);
+    fall_map_exit = (void (*)())FixAddress(0x482084);
+    fall_map_reset = (void (*)())FixAddress(0x482938);
+
+
     pfall_map_load = (void*)FixAddress(0x482A68);
     pfall_map_save = (void*)FixAddress(0x483C6C);
     pfall_map_set_mapper_mouse = (void*)FixAddress(0x44C9F0);
 
-    pAreMapHexesVisible = (LONG*)FixAddress(0x51D960);
-    pAreRoovesVisible = (LONG*)FixAddress(0x51D95C);
+    pIsMapperMouse = (BOOL*)FixAddress(0x518C00);
+    pAreHexesVisible = (BOOL*)FixAddress(0x51D960);
+    pAreRoovesVisible = (BOOL*)FixAddress(0x51D95C);
 
     pfall_map_set_level = (void*)FixAddress(0x482158);
     pfall_map_get_blocking_obj_at_pos = (void*)FixAddress(0x48B848);
@@ -334,6 +430,7 @@ void Fallout_Functions_Setup_GameMap_MULTI() {
     pfall_map_save_data = (void*)FixAddress(0x483980);
 
     pfall_map_refresh_lights = (void*)FixAddress(0x48AC54);
+    pfall_map_update_light_map = (void*)FixAddress(0x48DC28);
 
     pAreObjectsInitiated = (LONG*)FixAddress(0x5195F8);
 
@@ -353,6 +450,11 @@ void Fallout_Functions_Setup_GameMap_MULTI() {
     pfall_automap_get_short_city_name = (void*)FixAddress(0x48261C);
 
     pfall_map_save_in_game = (void*)FixAddress(0x483C98);
+
+    fall_game_reset = (void (*)())FixAddress(0x442B84);
+    fall_game_exit = (void (*)())FixAddress(0x442C34);
+
+    p_map_header = (MAP_HEADER*)FixAddress(0x631D54);
 }
 
 

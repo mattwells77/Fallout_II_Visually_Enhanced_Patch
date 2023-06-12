@@ -22,54 +22,44 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#define WINVER       _WIN32_WINNT_VISTA
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
+#include "mapper_tools.h"
+#include "../Fall_Objects.h"
 
-#define WIN32_LEAN_AND_MEAN //Exclude rarely-used stuff from Windows headers
-
-#define ISOLATION_AWARE_ENABLED 1
-
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-//Windows Header Files
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <windowsx.h>
-
-//used in errors.cpp
-#include <stdarg.h>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-//used in configTools.cpp
-#include <Shlobj.h>
-#include <Shlwapi.h>
-#include <VersionHelpers.h>
-
-
-extern HINSTANCE phinstDLL;
+#include "win_Mapper.h"
 
 
 
-/*
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
 
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    void DLL_EXPORT Initialize();
-#ifdef __cplusplus
-}
-#endif
+enum class WINDOW_STATE {
+    Child_Bottom,
+    Child_Right,
+    Popup
+};
 
-*/
+extern WINDOW_STATE object_broser_state;
+
+//extern OBJNode *pObjs_Selected;
+
+extern HWND hWinObjBrowser;
+
+BOOL ObjectBrowser_Toggle_Open();
+BOOL ObjectBrowser_Open();
+BOOL ObjectBrowser_Close();
+BOOL IsObjectBrowserOpened();
+WINDOW_STATE ObjectBrowser_SetView(WINDOW_STATE new_browser_view);
+
+HBITMAP CreateIconFRM(HDC hdc, DWORD frmID, int ori, DWORD width, DWORD height, DWORD* p_bgColour);
+
+void ObjectList_Refresh(OBJNode* p_objects, TILE_DATA_node* p_tiles);
+
+void ProtoList_Refresh();
+void ProtoList_Set(LONG type, LONG position);
+void ProtoList_GoToProto(DWORD proID);
+void ProtoList_GoToTileProto_With_FrmID(DWORD frmID);
+
+//BOOL ProtoList_Rebuild_Cache(LONG type);
+
+
+
+

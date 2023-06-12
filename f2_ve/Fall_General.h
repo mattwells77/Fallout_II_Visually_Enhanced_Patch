@@ -90,8 +90,8 @@ LONG fall_TEXT_Divide_By_Width(const char* txt, LONG widthInPixels, SHORT* pLine
 
 
 
-LONG fall_Set_Background_Sound(const char* pFileName_noEXT, DWORD flag1);
-LONG fall_Set_Background_Sound(const char* pFileName_noEXT, DWORD flag1, DWORD flag2, DWORD flag3);
+LONG fall_Background_Sound_Set(const char* pFileName_noEXT, DWORD flag1);
+LONG fall_Background_Sound_Set(const char* pFileName_noEXT, DWORD flag1, DWORD flag2, DWORD flag3);
 
 
 void fall_GameTime_Get_Date(LONG* p_month, LONG* p_day, LONG* p_year);
@@ -141,3 +141,5 @@ extern LONG(*fall_GameTime_Get_Time)();
 extern void(*fall_Process_Input)();
 extern void(*fall_Process_Map_Mouse)();
 extern void(*fall_Update_Mouse_State)();
+
+extern void(*fall_Background_Sound_Stop)();

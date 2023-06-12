@@ -91,7 +91,9 @@ void(*fall_Speech_Play)() = nullptr;
 void* pfall_Speech_Load = nullptr;
 void* pfall_Speech_Set_Callback_Function = nullptr;
 
-void* pfall_set_background_sound = nullptr;
+void* pfall_background_sound_set = nullptr;
+void(*fall_Background_Sound_Stop)() = nullptr;
+
 void(*fall_Sound_Continue_ALL)() = nullptr;
 
 void* pfall_TEXT_Divide_By_Width = nullptr;
@@ -121,14 +123,14 @@ void fall_GameTime_Get_Date(LONG* p_month, LONG* p_day, LONG* p_year) {
 
 
 //________________________________________________________________________________________________
-LONG fall_Set_Background_Sound(const char* pFileName_noEXT, DWORD flag1, DWORD flag2, DWORD flag3) {
+LONG fall_Background_Sound_Set(const char* pFileName_noEXT, DWORD flag1, DWORD flag2, DWORD flag3) {
     LONG retVal = 0;
     __asm {
         mov ecx, flag3
         mov ebx, flag2
         mov edx, flag1
         mov eax, pFileName_noEXT
-        call pfall_set_background_sound
+        call pfall_background_sound_set
         mov retVal, eax
     }
     return retVal;
@@ -136,14 +138,14 @@ LONG fall_Set_Background_Sound(const char* pFileName_noEXT, DWORD flag1, DWORD f
 
 
 //______________________________________________________________________
-LONG fall_Set_Background_Sound(const char* pFileName_noEXT, DWORD flag1) {
+LONG fall_Background_Sound_Set(const char* pFileName_noEXT, DWORD flag1) {
     LONG retVal = 0;
     __asm {
         mov ecx, 16
         mov ebx, 14
         mov edx, flag1
         mov eax, pFileName_noEXT
-        call pfall_set_background_sound
+        call pfall_background_sound_set
         mov retVal, eax
     }
     return retVal;
@@ -673,7 +675,9 @@ void Fallout_Functions_Setup_General() {
 
         p_PC_party_size = (LONG*)FixAddress(0x51884C);
 
-        pfall_set_background_sound = (void*)FixAddress(0x45067C);
+        pfall_background_sound_set = (void*)FixAddress(0x45067C);
+
+        fall_Background_Sound_Stop = (void(*)())FixAddress(0x450AB4);
 
         fall_GameTime_Get_Time = (LONG(*)())FixAddress(0x4A33C8);
         pfall_GameTime_Get_Date = (void*)FixAddress(0x4A3338);

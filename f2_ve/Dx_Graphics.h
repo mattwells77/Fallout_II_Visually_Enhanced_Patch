@@ -573,9 +573,9 @@ public:
         return frmNode->GetFrm();
     }
 protected:
-private:
     DWORD frmID;
     FRMDXnode* frmNode;
+private:
 };
 
 

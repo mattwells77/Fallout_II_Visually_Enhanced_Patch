@@ -56,6 +56,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Dx_RenderTarget.h"
 #include "Dx_Windows.h"
 #include "Fall_Objects.h"
+#include "game_map.h"
 
 
 extern RECT rcGame_GUI;//the dimensions of the game window on the gui - different from the visible game area that is affected by game portal scaling.
@@ -64,7 +65,7 @@ extern RECT rcGame_PORTAL;//the dimensions of the visible area on the map, left 
 extern LONG game_PortalWidth;
 extern LONG game_PortalHeight;
 
-
+extern bool SFALL_MoreTiles;
 
 
 struct OBJlight {
@@ -209,8 +210,8 @@ public:
 
         LONG artType = ((0x0F000000 & frmID) >> 24);
         //if ((FOG_OF_WAR > 2 || artType == ART_CRITTERS || artType == ART_ITEMS) && !(pObj->flags & FLG_MarkedByPC))
-        if ((artType == ART_CRITTERS || artType == ART_ITEMS) && !(pObj->flags & FLG_MarkedByPC))
-        //if (!(pObj->flags & FLG_MarkedByPC))
+        if (isGameMode && ((artType == ART_CRITTERS || artType == ART_ITEMS) && !(pObj->flags & FLG_MarkedByPC)))
+            //if (!(pObj->flags & FLG_MarkedByPC))
             opaqueness = 0.0f;
         else
             opaqueness = 1.0f;
@@ -310,9 +311,9 @@ struct OBJStructDx {
     DWORD light_radius;//0x6C //radius in hexes
     DWORD light_intensity;//0x70 
     DWORD combatFlags;//0x74
-    DWORD scriptID1;//0x78  //map script ID 
-    DWORD unknown7C;//0x7C //not read but written but set to 0 on load.
-    DWORD scriptID2;//0x80  //objScriptID?
+    DWORD scriptID;//0x78  //map script ID 
+    OBJStructDx* pObj_owner;//0x7C //not read but written but set to 0 on load.
+    DWORD scriptIndex;//0x80  //objScriptID?
     DWORD light_colour; //0x84 RGBX
     FRMobj* frmObjDx;//0x88
 };
@@ -325,7 +326,7 @@ struct OBJFadeNode {
     OBJFadeNode* next;
 };
 
-
+/*
 class FRMtile {
     DWORD frmID;
     FRMDXnode* frmNode;
@@ -359,14 +360,177 @@ public:
         return pFrame;
     }
 };
+*/
+class FRMtile : virtual public FRMCached {
+public:
+    DWORD combatFlags;
+    FRMtile(DWORD inFrmID) :
+        FRMCached(inFrmID) {
+        combatFlags = 0;
+    };
+    ~FRMtile() {
+    };
+    FRMframeDx* SetFrm(DWORD inFrmID, DWORD ori, WORD frameNum) {
+        if (frmID != inFrmID) {
+            frmNode = frmDxCache->Get(inFrmID);
+            frmDxCache->Forget(frmID);
+            frmID = inFrmID;
+        }
+        FRMframeDx* pFrame = frmNode->GetFrame(ori, frameNum);
+        if (!pFrame)
+            frmID = 0;
+        return pFrame;
+    }
+protected:
+private:
+};
+
+
+
+class FRMtile_Map {
+public:
+    FRMtile_Map() {
+        width_tiles = *pNUM_TILE_X;
+        height_tiles = *pNUM_TILE_Y;
+        num_tiles = width_tiles * height_tiles;
+        for (int level = 0; level < 3; level++) {
+            floor[level] = new FRMtile * [num_tiles];
+            roof[level] = new FRMtile * [num_tiles];
+            for (DWORD u = 0; u < num_tiles; u++) {
+                roof[level][u] = nullptr;
+                floor[level][u] = nullptr;
+            }
+        }
+
+    };
+    ~FRMtile_Map() {
+        for (int level = 0; level < 3; level++) {
+            Reset_Tiles(level);
+            if (floor[level])
+                delete floor[level];
+            if (roof[level])
+                delete roof[level];
+        }
+
+    };
+    FRMframeDx* GetFloorTile_Frame(LONG tileNum, LONG level) {
+        FRMtile* p_tile = GetFloorTile(tileNum, level);
+        if (p_tile)
+            return p_tile->GetFrame(0, 0);
+        return nullptr;
+    };
+    DWORD GetFloorTile_Flags(LONG tileNum, LONG level) {
+        FRMtile* p_tile = GetFloorTile(tileNum, level);
+        if (p_tile)
+            return p_tile->combatFlags;
+        return 0;
+    };
+    void SetFloorTile_Flags(LONG tileNum, LONG level, DWORD flags) {
+        FRMtile* p_tile = GetFloorTile(tileNum, level);
+        if (p_tile)
+            p_tile->combatFlags = flags;
+    };
+    FRMframeDx* GetRoofTile_Frame(LONG tileNum, LONG level) {
+        FRMtile* p_tile = GetRoofTile(tileNum, level);
+        if (p_tile)
+            return p_tile->GetFrame(0, 0);
+        return nullptr;
+    };
+    DWORD GetRoofTile_Flags(LONG tileNum, LONG level) {
+        FRMtile* p_tile = GetRoofTile(tileNum, level);
+        if (p_tile)
+            return p_tile->combatFlags;
+        return 0;
+    };
+    void SetRoofTile_Flags(LONG tileNum, LONG level, DWORD flags) {
+        FRMtile* p_tile = GetRoofTile(tileNum, level);
+        if (p_tile)
+            p_tile->combatFlags = flags;
+    };
+
+    void Reset_Map() {
+        for (LONG level = 0; level < 3; level++)
+            Reset_Tiles(level);
+    };
+    void Reset_RoofTiles() {
+        for (LONG level = 0; level < 3; level++) {
+            Reset_RoofTiles(level);
+        }
+    };
+protected:
+private:
+    DWORD width_tiles;
+    DWORD height_tiles;
+    DWORD num_tiles;
+    FRMtile** floor[3];
+    FRMtile** roof[3];
+
+
+    FRMtile* GetRoofTile(LONG tileNum, LONG level) {
+        if (level < 0 || level >= 3)
+            return 0;
+        if (tileNum < 0 || tileNum >= (LONG)num_tiles)
+            return nullptr;
+        DWORD frmID = GameMap_GetTileFrmID(tileNum, level, TRUE, nullptr);
+        if (roof[level][tileNum])
+            roof[level][tileNum]->SetFrm(frmID, 0, 0);
+        else
+            roof[level][tileNum] = new FRMtile(frmID);
+        return roof[level][tileNum];
+    };
+    FRMtile* GetFloorTile(LONG tileNum, LONG level) {
+        if (level < 0 || level >= 3)
+            return nullptr;
+        if (tileNum < 0 || tileNum >= (LONG)num_tiles)
+            return nullptr;
+        DWORD frmID = GameMap_GetTileFrmID(tileNum, level, FALSE, nullptr);
+        if (floor[level][tileNum])
+            floor[level][tileNum]->SetFrm(frmID, 0, 0);
+        else
+            floor[level][tileNum] = new FRMtile(frmID);
+        return floor[level][tileNum];
+    };
+
+    void Reset_Tiles(LONG level) {
+        if (level < 0 || level >= 3)
+            return;
+        for (DWORD u = 0; u < num_tiles; u++) {
+            if (floor[level][u])
+                delete floor[level][u];
+            floor[level][u] = nullptr;
+            if (roof[level][u])
+                delete roof[level][u];
+            roof[level][u] = nullptr;
+        }
+    };
+    void Reset_FloorTiles(LONG level) {
+        if (level < 0 || level >= 3)
+            return;
+        for (DWORD u = 0; u < num_tiles; u++) {
+            if (floor[level][u])
+                delete floor[level][u];
+            floor[level][u] = nullptr;
+        }
+    };
+    void Reset_RoofTiles(LONG level) {
+        if (level < 0 || level >= 3)
+            return;
+        for (DWORD u = 0; u < num_tiles; u++) {
+            if (roof[level][u])
+                delete roof[level][u];
+            roof[level][u] = nullptr;
+        }
+    };
+};
+
 
 
 struct TILEnode {
     LONG tileNum;
     LONG x;
     LONG y;
-    DWORD frmID;
-    FRMtile* pFrm;
+    //DWORD frmID;
+    //FRMtile* pFrm;
     TILEnode* next;
 };
 
@@ -390,9 +554,9 @@ public:
             pThisTile = tiles;
             while (pThisTile) {
                 pNextTile = pThisTile->next;
-                if (pThisTile->pFrm)
-                    delete pThisTile->pFrm;
-                pThisTile->pFrm = nullptr;
+                //if (pThisTile->pFrm)
+                //    delete pThisTile->pFrm;
+                //pThisTile->pFrm = nullptr;
                 delete pThisTile;
                 pThisTile = pNextTile;
             }
@@ -433,19 +597,19 @@ struct checkTileNODE {
 };
 
 
-struct COMPASS {
-    LONG east;
-    LONG north;
-    LONG west;
-    LONG south;
-};
+//struct COMPASS {
+//    LONG west;
+//    LONG north;
+//    LONG east;
+//    LONG south;
+//};
 
 
 class GAME_AREA {
 public:
     TILE_AREA_Node* rooves;
     TILEnode* tiles;
-    COMPASS tileLimits;//floor tile coordinates boundary for isometric angular draw clipping; vals = (0-99)left-right (0-99)top-bottom;
+    RECT tileLimits;//floor tile coordinates boundary for isometric angular draw clipping; vals = (0-100)right-left "east to west", (0-100)top-bottom "north to south";
     DWORD tileLimitFlags;
     RECT rect; //pixel coordinates on map left to right (-4800 to 3200) & top to bottom (0 to 3600);
     LONG width;
@@ -496,9 +660,9 @@ public:
             pThisTile = tiles;
             while (pThisTile) {
                 pNextTile = pThisTile->next;
-                if (pThisTile->pFrm)
-                    delete pThisTile->pFrm;
-                pThisTile->pFrm = nullptr;
+                //if (pThisTile->pFrm)
+                //    delete pThisTile->pFrm;
+                //pThisTile->pFrm = nullptr;
                 delete pThisTile;
                 pThisTile = pNextTile;
             }
@@ -535,7 +699,8 @@ public:
             pHud_RT->SetPosition(rect.left + xPos, rect.top + yPos);
         if (pFog_RT)
             pFog_RT->SetPosition(rect.left + xPos, rect.top + yPos);
-        pHud_RT_Outline->ClearRenderTarget(nullptr);
+        if (pHud_RT_Outline)
+            pHud_RT_Outline->ClearRenderTarget(nullptr);
     };
     void SetScale(float in_scaleX, float in_scaleY) {
         scaleX = in_scaleX;
@@ -593,8 +758,10 @@ void MapLight_Release_RenderTargets();
 void SetAmbientLight_ShaderEffect();
 void DrawMouseObjDx(float inScaleX, float inScaleY, LONG layer);
 
-
-bool GameAreas_Save(const char* MapName);
+//Saves map edges to file,
+//version 2 was the last supported version for HRP 4.18,
+//version 3 currently only supported in VEP.
+bool GameAreas_Save(const char* MapName, DWORD version);
 void GameAreas_Load_Default();
 bool GameAreas_Load(const char* MapName);
 void GameAreas_Load_Tiles();
@@ -602,6 +769,7 @@ void GameAreas_Destroy();
 void GameAreas_Display();
 void GameAreas_SetScale();
 bool GameAreas_Set_Current_Area_Hex(LONG hexNum);
+bool GameAreas_Set_Current_Area_Hex(LONG hex_x, LONG hex_y);
 GAME_AREA* GameAreas_GetCurrentArea();
 void GameAreas_ShiftWallRoofOpaqueness(int direction);
 void GameAreas_FadingObjects_Add(OBJStruct* pObj, bool fadeIn);
@@ -610,6 +778,7 @@ void GameAreas_FadingObjects_Draw();
 bool GameAreas_DrawToWindow(Window_DX* pWin, LONG hexNum, LONG portalWidth, LONG portalHeight);
 
 LONG SetViewPosition_Hex(LONG hexNum, DWORD flags);
+LONG SetViewPosition_Hex_Unbound(LONG hex_x, LONG hex_y, DWORD flags);
 LONG MapScroller(LONG xMove, LONG yMove);
 
 void CheckIfPcUnderRoof();
@@ -620,3 +789,26 @@ void DrawPalAniObjs(LONG level, DWORD flags);
 void CheckLitObjectRect(RECT* rect, LONG level);
 
 void DrawLightShadows(OBJlight* light, LONG level);
+
+
+void GameAreas_Load_Mapper();
+GAME_AREA* GameAreas_Get(LONG level);
+//BOOL GameArea_Update_Tile_Mapper(LONG tilePosNum, LONG level, BOOL isRoof);
+BOOL GameArea_Update_Tile_Mapper(LONG tilePosNum, LONG level);
+
+void GameArea_DrawObjOutline(GAME_AREA* pArea, OBJStruct* pObj);
+void GameArea_DrawTileOutline(GAME_AREA* pArea, DWORD frmID, LONG tileNum, LONG level, BOOL isRoof, DWORD combatFlags);
+
+//BOOL GameArea_Update_Tile_Flags(int tilePosNum, int level, BOOL set_Floor, BOOL set_Roof, DWORD flags);
+
+FRMframeDx* GameMap_GetTile_Frame(LONG tileNum, LONG level, BOOL isRoof);
+DWORD GameMap_GetTile_Flags(LONG tileNum, LONG level, BOOL isRoof);
+void GameMap_SetTile_Flags(LONG tileNum, LONG level, BOOL isRoof, DWORD flags);
+
+
+ID3D11Buffer* SelectingRectVB_Get();
+bool SelectingRectVB_Set(POINT* p_squ_p1, POINT* p_squ_p2);
+void SelectingRectVB_Destroy();
+bool TileLimitsRectVB_Set();
+
+bool GetObjRectDx(OBJStruct* pObj, RECT* pRect);

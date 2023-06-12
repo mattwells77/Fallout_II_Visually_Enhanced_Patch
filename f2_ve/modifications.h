@@ -62,8 +62,8 @@ void ResizePauseWin();
 //Save the load/save map picture to file.
 void LS_Save_Picture_To_File(const char* p_save_dat_path);
 
-void GetMousePosOnGamePortal(LONG *pXPos, LONG *pYPos);
-void GetMousePosOnGameMap(LONG* pXPos, LONG* pYPos);
+BOOL GetMousePosOnGamePortal(LONG *pXPos, LONG *pYPos);
+BOOL GetMousePosOnGameMap(LONG* pXPos, LONG* pYPos);
 
 bool Mouse_Wheel_Inventory(int zDelta, int* p_keyCode, int* p_pageSize);
 bool Mouse_Wheel_Imonitor(int zDelta, bool scrollPage);
@@ -93,6 +93,8 @@ void Modifications_Help();
 
 void Modifications_Win();
 void Modifications_Pause();
+
+void Modifications_Mapper();
 
 extern LONG(*fall_NotifyBar_Enable)();
 extern LONG(*fall_NotifyBar_Disable)();

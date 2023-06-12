@@ -32,16 +32,6 @@ class OBJInfo {
 };
 
 
-struct TILE_list {
-   LONG level;
-   LONG num;
-   DWORD mask;
-   DWORD tiles;//tile list nums for floor|roof // 0x0fff0rrr
-   DWORD combatFlags;
-   TILE_list *next;
-};
-
-
 struct FloatingTextObj {
    DWORD flags;    //0x00 //flags
    OBJStruct *pObj; //0x04 //associated map obj
@@ -55,6 +45,23 @@ struct FloatingTextObj {
    LONG imgWidth;  //0x24
    LONG imgHeight; //0x28
    BYTE *pImgBuff; //0x2C
+};
+
+
+struct MAP_HEADER {
+	DWORD version;
+	char name[16];
+	LONG pcHexPos;
+	LONG pcLevel;
+	LONG pcOri;
+	LONG numLocalVars;
+	LONG scriptIndex;
+	DWORD levelFlags;
+	DWORD unknown0x2C;
+	LONG numGlobalVars;
+	DWORD mapID;
+	DWORD ticksEpoch;
+	DWORD unknown0x3C[44];
 };
 
 
@@ -100,9 +107,17 @@ extern DWORD*** pMapTileLevelOffset;
 
 extern LONG* pLightHexArray;
 
+
+extern BOOL* pAreRoovesVisible;
+extern BOOL* pAreHexesVisible;
+extern BOOL* pIsMapperMouse;
+
 void Fallout_Functions_Setup_GameMap();
 
 void fall_Map_RefreshLights();
+// add_remove_flag [0 = add light, 1 = remove light]	p_rc_area [optional draw area rect]
+LONG fall_Map_UpdateLightMap(OBJStruct* p_obj, LONG add_remove_flag, RECT* p_rc_area);
+
 
 LONG GetAmbientLightIntensity();
 void fall_Map_SetAmbientLightIntensity(LONG intensity, DWORD flag);
@@ -117,3 +132,19 @@ OBJStruct* fall_Map_GetBlockingObjAtPos(OBJStruct* obj, LONG hexNum, LONG level)
 //replace associated functions at some point
 void UpdateFloatingTextAreaWH(LONG width, LONG height);
 
+
+LONG fall_Fallout_Initiate(const char* title, BOOL isMapper, LONG font, DWORD flags, DWORD pathLength, const char* path);
+
+LONG fall_Map_Load(const char* map_file_name);
+LONG fall_Map_Save(const char* map_file_name);
+
+LONG fall_Map_SetLevel(LONG level);
+
+MAP_HEADER* Get_Map_Header();
+
+extern void(*fall_game_reset)();
+extern void(*fall_game_exit)();
+
+extern void(*fall_map_init)();
+extern void (*fall_map_exit)();
+extern void(*fall_map_reset)();

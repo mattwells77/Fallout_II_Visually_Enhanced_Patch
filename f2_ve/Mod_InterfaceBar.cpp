@@ -905,7 +905,7 @@ void OnScreenResize_Iface(Window_DX* pWin_This) {
         return;
 
     IFACE_BAR_WIDTH = IFACE_BAR_GRAPHIC_WIDTH;
-    if (IFACE_BAR_WIDTH > SCR_WIDTH)
+    if (SCR_WIDTH >= 640 && IFACE_BAR_WIDTH > SCR_WIDTH)
         IFACE_BAR_WIDTH = SCR_WIDTH;
     LONG winX = 0;
     LONG winY = SCR_HEIGHT - ifaceWin->height;
@@ -915,8 +915,8 @@ void OnScreenResize_Iface(Window_DX* pWin_This) {
     else if (IFACE_BAR_LOCATION == 2)
         winX = (LONG)SCR_WIDTH - (LONG)IFACE_BAR_WIDTH;
 
-    if (SCR_WIDTH < IFACE_BAR_WIDTH)
-        IFACE_BAR_WIDTH = SCR_WIDTH;
+    //if (SCR_WIDTH < IFACE_BAR_WIDTH)
+    //    IFACE_BAR_WIDTH = SCR_WIDTH;
 
     if (ifaceWin->width == IFACE_BAR_WIDTH) 
         MoveWindowX(ifaceWin, winX, winY);
@@ -941,10 +941,10 @@ void OnScreenResize_Iface(Window_DX* pWin_This) {
         Window_DX* winDx = ifaceWin->winDx->GetSubWin(subWin_num_iMonitor);
         if (winDx) {
             imonitorRect->right = 189 + ifaceWin->width - 640;
-
+            Fallout_Debug_Error("imonitorAreaWidth%d", imonitorAreaWidth);
             imonitorAreaX = 23;
             imonitorAreaWidth = imonitorRect->right - imonitorRect->left + 1;
-
+            Fallout_Debug_Error("imonitorAreaWidth%d", imonitorAreaWidth);
             winDx->ResizeWindow(imonitorAreaWidth, imonitorAreaHeight);
 
             *p_imonitor_num_visible_lines = imonitorAreaHeight / imonitorTxtHeight;
@@ -1205,7 +1205,7 @@ LONG Iface_Setup() {
     }
     IFACE_BAR_WIDTH = IFACE_BAR_GRAPHIC_WIDTH;
 
-    if (SCR_WIDTH < IFACE_BAR_WIDTH)
+    if (SCR_WIDTH >= 640 && SCR_WIDTH < IFACE_BAR_WIDTH)
         IFACE_BAR_WIDTH = SCR_WIDTH;
 
     LONG winX = 0;

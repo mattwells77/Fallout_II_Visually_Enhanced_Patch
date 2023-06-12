@@ -84,7 +84,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0_level_9_1</ShaderModel>
@@ -109,6 +109,10 @@
       <Message>
       </Message>
     </PreBuildEvent>
+    <Manifest>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -127,7 +131,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0_level_9_1</ShaderModel>
@@ -152,6 +156,10 @@
       <Message>
       </Message>
     </PreBuildEvent>
+    <Manifest>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -166,7 +174,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0_level_9_1</ShaderModel>
@@ -191,6 +199,11 @@
       <Message>
       </Message>
     </PreBuildEvent>
+    <Manifest />
+    <Manifest>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -209,7 +222,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib;</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Version.lib</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0_level_9_1</ShaderModel>
@@ -234,6 +247,11 @@
       <Message>
       </Message>
     </PreBuildEvent>
+    <Manifest />
+    <Manifest>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Dx_Game.h" />
@@ -256,9 +274,21 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="game_map.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="mapper\mapper_tools.h" />
+    <ClInclude Include="mapper\proto_cache.h" />
+    <ClInclude Include="mapper\win_Edit_Light_Colour.h" />
+    <ClInclude Include="mapper\win_ListBox.h" />
+    <ClInclude Include="mapper\win_Mapper.h" />
+    <ClInclude Include="mapper\win_ObjectEditor.h" />
+    <ClInclude Include="mapper\win_ProgressBar.h" />
+    <ClInclude Include="mapper\win_ProtoBrowser.h" />
+    <ClInclude Include="mapper\win_Set_Ambient_Light.h" />
+    <ClInclude Include="mapper\win_ToolBar.h" />
     <ClInclude Include="memwrite.h" />
     <ClInclude Include="modifications.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_32.h" />
     <ClInclude Include="shaders\compiled_h\PS_Basic_Tex_8.h" />
     <ClInclude Include="shaders\compiled_h\PS_Colour_32.h" />
@@ -319,6 +349,17 @@
     <ClCompile Include="Fall_Windows.cpp" />
     <ClCompile Include="game_map.cpp" />
     <ClCompile Include="graphics.cpp" />
+    <ClCompile Include="mapper\mapper_tools.cpp" />
+    <ClCompile Include="mapper\proto_cache.cpp" />
+    <ClCompile Include="mapper\win_Edit_Light_Colour.cpp" />
+    <ClCompile Include="mapper\win_ListBox.cpp" />
+    <ClCompile Include="mapper\win_Mapper.cpp" />
+    <ClCompile Include="mapper\win_ObjectEditor.cpp" />
+    <ClCompile Include="mapper\win_ProgressBar.cpp" />
+    <ClCompile Include="mapper\win_ProtoBrowser.cpp" />
+    <ClCompile Include="mapper\win_Set_Ambient_Light.cpp" />
+    <ClCompile Include="mapper\win_ToolBar.cpp" />
+    <ClCompile Include="Mod_Mapper.cpp" />
     <ClCompile Include="memwrite.cpp" />
     <ClCompile Include="Mod_Char.cpp" />
     <ClCompile Include="Mod_Credits.cpp" />
@@ -516,6 +557,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="shaders\PS_Outline_Quad_32.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="shaders\PS_RenderFloorLight32.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
@@ -570,7 +617,15 @@
     <None Include="shaders\shaderPixel_Main.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="Mapper.rc" />
     <ResourceCompile Include="version.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="mapper\bitmap2.bmp" />
+    <Image Include="mapper\checkbox.bmp" />
+    <Image Include="mapper\tools.bmp" />
+    <Image Include="mapper\wieldbox.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

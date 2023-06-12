@@ -22,54 +22,11 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#define WINVER       _WIN32_WINNT_VISTA
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
+#include "../Fall_Objects.h"
 
-#define WIN32_LEAN_AND_MEAN //Exclude rarely-used stuff from Windows headers
-
-#define ISOLATION_AWARE_ENABLED 1
-
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-//Windows Header Files
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <windowsx.h>
-
-//used in errors.cpp
-#include <stdarg.h>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-//used in configTools.cpp
-#include <Shlobj.h>
-#include <Shlwapi.h>
-#include <VersionHelpers.h>
+int Dialog_ObjectEditor(HWND hwndParent, HINSTANCE hinstance, OBJStruct* pObj);
 
 
-extern HINSTANCE phinstDLL;
+void SetUpComboBox_Scripts(HWND hWndComboBox, LONG scriptIndex);
+BOOL Script_Get_Name(LONG scriptIndex, wchar_t* ret_name, DWORD name_length);
 
-
-
-/*
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
-
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    void DLL_EXPORT Initialize();
-#ifdef __cplusplus
-}
-#endif
-
-*/

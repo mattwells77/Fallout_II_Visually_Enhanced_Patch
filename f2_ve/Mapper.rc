@@ -1,0 +1,997 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United Kingdom) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU_MAIN MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New\tCtrl+N",                ID_FILE_NEW
+        MENUITEM "&Open\tCtrl+O",               ID_FILE_OPEN
+        MENUITEM "&Save\tCtrl+S",               ID_FILE_SAVE
+        MENUITEM "Save &As",                    ID_FILE_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "&Quit\tCtrl+Q",               ID_FILE_QUIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "Cu&t\tCtrl+X",                ID_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",              ID_EDIT_PASTE
+        MENUITEM "&Delete\tDel",                ID_EDIT_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Copy Level\tCtrl+Shift+C",    ID_EDIT_COPYLEVEL
+        MENUITEM "Paste Level\tCtrl+Shift+V",   ID_EDIT_PASTELEVEL
+        MENUITEM SEPARATOR
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Rooves\tR",                  ID_VIEW_ROOVES
+        MENUITEM "&Hexes\tH",                   ID_VIEW_HEXES
+        MENUITEM "&Blockers\tB",                ID_VIEW_BLOCKERS
+        MENUITEM SEPARATOR
+        MENUITEM "&Items\tF1",                  ID_VIEW_ITEMS
+        MENUITEM "&Critters\tF2",               ID_VIEW_CRITTERS
+        MENUITEM "&Scenery\tF3",                ID_VIEW_SCENERY
+        MENUITEM "&Walls\tF4",                  ID_VIEW_WALLS
+        MENUITEM "&Tiles\tF5",                  ID_VIEW_TILES
+        MENUITEM "&Misc\tF6",                   ID_VIEW_MISC
+        MENUITEM SEPARATOR
+        MENUITEM "Up A Level\tPgUp",            ID_LEVEL_UP
+        MENUITEM "Down A Level\tPgDn",          ID_LEVEL_DOWN
+        MENUITEM SEPARATOR
+        MENUITEM "Set Mapper Light Intensity",  ID_VIEW_SETMAPPERLIGHTINTENSITY
+    END
+    POPUP "Tools"
+    BEGIN
+        POPUP "Selection Tool Options"
+        BEGIN
+            MENUITEM "&Window Orientated Rect",     ID_SELECTIONTOOLOPTIONS_WINDOWORIENTATEDRECT
+            MENUITEM "&Perspective Orientated Rect", ID_SELECTIONTOOLOPTIONS_PERSPECTIVEORIENTATEDRECT
+        END
+        POPUP "Object Types Selectable"
+        BEGIN
+            MENUITEM "&All Types Selectable\tCtrl+Shift+F1", ID_OBJECTTYPESSELECTABLE_ALLTYPESSELECTABLE
+            MENUITEM "&Items\tCtrl+F1",             ID_OBJECTTYPESSELECTABLE_ITEMS
+            MENUITEM "&Critters\tCtrl+F2",          ID_OBJECTTYPESSELECTABLE_CRITTERS
+            MENUITEM "&Scenery\tCtrl+F3",           ID_OBJECTTYPESSELECTABLE_SCENERY
+            MENUITEM "&Walls\tCtrl+F4",             ID_OBJECTTYPESSELECTABLE_WALLS
+            MENUITEM "&Tiles\tCtrl+F5",             ID_OBJECTTYPESSELECTABLE_TILES
+            MENUITEM "&Misc\tCtrl+F6",              ID_OBJECTTYPESSELECTABLE_MISC
+        END
+        POPUP "HRP\\VE Edges"
+        BEGIN
+            MENUITEM "&Toggle Visibility Of Edges", ID_HRP_TOGGLEVISIBILITYOFEDGES
+            MENUITEM "&Cycle Selected Edge Rect",   ID_HRP_CYCLESELECTEDEDGERECT
+            MENUITEM "&Add New Edge Rect",          ID_HRP_ADDNEWEDGERECT
+            MENUITEM "&Delete Selected Edge Rect",  ID_HRP_DELETESELECTEDEDGERECT
+            MENUITEM SEPARATOR
+            POPUP "Edit Selected Edge Rect"
+            BEGIN
+                MENUITEM "Left",                        ID_HRP_EDITLEFTEDGEOFSELECTEDRECT
+                MENUITEM "Top",                         ID_HRP_EDITTOPEDGEOFSELECTEDRECT
+                MENUITEM "Right",                       ID_HRP_EDITRIGHTEDGEOFSELECTEDRECT
+                MENUITEM "Bottom",                      ID_HRP_EDITBOTTOMEDGEOFSELECTEDRECT
+            END
+            POPUP "Edit Isometric Map Edges"
+            BEGIN
+                MENUITEM "West",                        ID_HRP_EDITISOMETRICMAPEDGES_WEST
+                MENUITEM "North",                       ID_HRP_EDITISOMETRICMAPEDGES_NORTH
+                MENUITEM "East",                        ID_HRP_EDITISOMETRICMAPEDGES_EAST
+                MENUITEM "South",                       ID_HRP_EDITISOMETRICMAPEDGES_SOUTH
+                MENUITEM SEPARATOR
+                POPUP "Clip Non-Flat Objects"
+                BEGIN
+                    MENUITEM "West",                        ID_HRP_ISOEDGE_FLAG_WEST
+                    MENUITEM "North",                       ID_HRP_ISOEDGE_FLAG_NORTH
+                    MENUITEM "East",                        ID_HRP_ISOEDGE_FLAG_EAST
+                    MENUITEM "South",                       ID_HRP_ISOEDGE_FLAG_SOUTH
+                END
+            END
+        END
+        POPUP "Rebuild Proto cache"
+        BEGIN
+            MENUITEM "All",                         ID_REBUILDPROTOCACHE_ALL
+            MENUITEM "Items",                       ID_REBUILDPROTOCACHE_ITEMS
+            MENUITEM "Critters",                    ID_REBUILDPROTOCACHE_CRITTERS
+            MENUITEM "Scenery",                     ID_REBUILDPROTOCACHE_SCENERY
+            MENUITEM "Walls",                       ID_REBUILDPROTOCACHE_WALLS
+            MENUITEM "Tiles",                       ID_REBUILDPROTOCACHE_TILES
+            MENUITEM "Misc",                        ID_REBUILDPROTOCACHE_MISC
+        END
+        POPUP "Scripts"
+        BEGIN
+            MENUITEM "Set Map Script",              ID_SCRIPTS_SETMAPSCRIPT
+        END
+    END
+    POPUP "&Windows"
+    BEGIN
+        POPUP "&Object Browser"
+        BEGIN
+            MENUITEM "Open",                        ID_OBJECTBROWSER_OPEN
+            MENUITEM SEPARATOR
+            MENUITEM "Bottom",                      ID_OBJECTBROWSER_BOTTOM
+            MENUITEM "Right",                       ID_OBJECTBROWSER_RIGHT
+            MENUITEM "Undocked",                    ID_OBJECTBROWSER_UNDOCKED
+        END
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      ID_HELP_ABOUT
+    END
+END
+
+IDR_MENU_LEVEL MENU
+BEGIN
+    POPUP "Level"
+    BEGIN
+        MENUITEM "1",                           ID_LEVEL_1
+        MENUITEM "2",                           ID_LEVEL_2
+        MENUITEM "3",                           ID_LEVEL_3
+    END
+END
+
+IDR_MENU_TOOLBAR MENU
+BEGIN
+    POPUP "ToolBar Menu"
+    BEGIN
+        MENUITEM "Add ToolBar",                 ID_TOOLBARMENU_ADDTOOLBAR
+        MENUITEM "Edit ToolBar",                ID_TOOLBARMENU_EDITTOOLBAR
+        MENUITEM "Delete ToolBar",              ID_TOOLBARMENU_DELETETOOLBAR
+    END
+END
+
+IDR_MENU_OBJECT MENU
+BEGIN
+    POPUP "Object"
+    BEGIN
+        MENUITEM "Edit",                        ID_OBJECT_EDIT
+        MENUITEM "Edit Light Colour",           ID_OBJECT_EDITLIGHTCOLOUR
+        MENUITEM SEPARATOR
+        MENUITEM "Copy",                        ID_OBJECT_COPY
+        MENUITEM "Delete",                      ID_OBJECT_DELETEFROMMAP
+        MENUITEM SEPARATOR
+        MENUITEM "Remove From List",            ID_OBJECT_REMOVEFROMLIST
+        MENUITEM SEPARATOR
+        MENUITEM "Goto Prototype",              ID_OBJECT_GOTOPROTOTYPE
+        POPUP "Select Objects On Level"
+        BEGIN
+            MENUITEM "With Matching Proto",         ID_SELECTOBJECTSONLEVEL_WITHMATCHINGPROTO
+            MENUITEM "With Matching Script",        ID_SELECTOBJECTSONLEVEL_WITHMATCHINGSCRIPT
+        END
+        POPUP "Select Objects On Map"
+        BEGIN
+            MENUITEM "With Matching Proto",         ID_SELECTOBJECTSONMAP_WITHMATCHINGPROTO
+            MENUITEM "With Matching Script",        ID_SELECTOBJECTSONMAP_WITHMATCHINGSCRIPT
+        END
+    END
+END
+
+IDR_MENU_ON_MAP MENU
+BEGIN
+    POPUP "Map Menu"
+    BEGIN
+        POPUP "Object Under_Mouse"
+        BEGIN
+            MENUITEM "Edit",                        ID_OBJECT_EDIT
+            MENUITEM "Edit Light Colour",           ID_OBJECT_EDITLIGHTCOLOUR
+            MENUITEM SEPARATOR
+            MENUITEM "Cut",                         ID_OBJECT_CUT
+            MENUITEM "Copy",                        ID_OBJECT_COPY
+            MENUITEM "Delete",                      ID_OBJECT_DELETEFROMMAP
+            MENUITEM SEPARATOR
+            MENUITEM "Goto Prototype",              ID_OBJECT_GOTOPROTOTYPE
+            POPUP "Select Objects On Level"
+            BEGIN
+                MENUITEM "With Matching Proto",         ID_SELECTOBJECTSONLEVEL_WITHMATCHINGPROTO
+                MENUITEM "With Matching Script",        ID_SELECTOBJECTSONLEVEL_WITHMATCHINGSCRIPT
+            END
+            POPUP "Select Objects On Map"
+            BEGIN
+                MENUITEM "With Matching Proto",         ID_SELECTOBJECTSONMAP_WITHMATCHINGPROTO
+                MENUITEM "With Matching Script",        ID_SELECTOBJECTSONMAP_WITHMATCHINGSCRIPT
+            END
+        END
+        POPUP "Selected"
+        BEGIN
+            MENUITEM "Cut",                         ID_SELECTED_CUT
+            MENUITEM "Copy",                        ID_SELECTED_COPY
+            MENUITEM "Delete",                      ID_SELECTED_DELETE
+        END
+        MENUITEM "Paste",                       ID_COPIED_PASTE
+        POPUP "Select On Level"
+        BEGIN
+            POPUP "Objects With Active Scripts"
+            BEGIN
+                MENUITEM "All",                         ID_OBJECTSWITHSCRIPTS_ALL
+                MENUITEM "System",                      ID_OBJECTSWITHSCRIPTS_SYSTEM
+                MENUITEM "Spatial",                     ID_OBJECTSWITHSCRIPTS_SPATIAL
+                MENUITEM "Time",                        ID_OBJECTSWITHSCRIPTS_TIME
+                MENUITEM "Item",                        ID_OBJECTSWITHSCRIPTS_ITEM
+                MENUITEM "Critter",                     ID_OBJECTSWITHSCRIPTS_CRITTER
+            END
+            MENUITEM "Objects With Inventory",      ID_SELECTALL_OBJECTSWITHINVENTORY
+            MENUITEM "Objects Emitting Light",      ID_SELECTALL_OBJECTSEMITTINGLIGHT
+        END
+        POPUP "Select On Map"
+        BEGIN
+            POPUP "Objects With Active Scripts"
+            BEGIN
+                MENUITEM "All",                         ID_OBJECTSWITHSCRIPTS_ALL_ONMAP
+                MENUITEM "System",                      ID_OBJECTSWITHSCRIPTS_SYSTEM_ONMAP
+                MENUITEM "Spatial",                     ID_OBJECTSWITHSCRIPTS_SPATIAL_ONMAP
+                MENUITEM "Time",                        ID_OBJECTSWITHSCRIPTS_TIME_ONMAP
+                MENUITEM "Item",                        ID_OBJECTSWITHSCRIPTS_ITEM_ONMAP
+                MENUITEM "Critter",                     ID_OBJECTSWITHSCRIPTS_CRITTER_ONMAP
+            END
+            MENUITEM "Objects With Inventory",      ID_SELECTALL_OBJECTSWITHINVENTORY_ONMAP
+            MENUITEM "Objects Emitting Light",      ID_SELECTALL_OBJECTSEMITTINGLIGHT_ONMAP
+        END
+        POPUP "Spatial Script"
+        BEGIN
+            MENUITEM "Create At Hex",               ID_SPATIALSCRIPT_CREATEATHEX
+            MENUITEM "Edit At Hex",                 ID_SPATIALSCRIPT_EDITATHEX
+            MENUITEM "Destroy At Hex",              ID_SPATIALSCRIPT_DESTROYATHEX
+        END
+        MENUITEM "Set Start Hex",               ID_MAPMENU_SETSTARTHEX
+        MENUITEM SEPARATOR
+        MENUITEM "Exit Menu",                   ID_MAPMENU_EXITMENU
+    END
+END
+
+IDR_MENU_PROTO MENU
+BEGIN
+    POPUP "Object"
+    BEGIN
+        MENUITEM "Edit",                        ID_OBJECT_EDIT
+        MENUITEM "Edit Light Colour",           ID_OBJECT_EDITLIGHTCOLOUR
+    END
+END
+
+IDR_MENU_INV MENU
+BEGIN
+    POPUP "Inventory"
+    BEGIN
+        MENUITEM "+1",                          ID_INVENTORY_PLUS_1
+        MENUITEM "- 1",                         ID_INVENTORY_MINUS_1
+        MENUITEM "Adjust Quantity",             ID_INVENTORY_ADJUSTQUANTITY
+        MENUITEM "Remove All",                  ID_INVENTORY_REMOVEALL
+        MENUITEM SEPARATOR
+        MENUITEM "Wear Item",                   ID_INVENTORY_WEARITEM
+        MENUITEM "Hold Item In Left",           ID_INVENTORY_HOLDITEMINLEFT
+        MENUITEM "Hold Item In Right",          ID_INVENTORY_HOLDITEMINRIGHT
+        MENUITEM SEPARATOR
+        MENUITEM "Weapon Load",                 ID_INVENTORY_WEAPONLOAD
+        MENUITEM "Weapon Unload",               ID_INVENTORY_WEAPONUNLOAD
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "icon1.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_LIST_SELECT DIALOGEX 0, 0, 141, 143
+STYLE DS_ABSALIGN | DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "List Select:"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,15,122,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,76,122,50,14
+    LISTBOX         IDC_LIST1,15,9,110,104,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+END
+
+IDD_DIALOG_LIST_SELECT_EDIT DIALOGEX 0, 0, 141, 164
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Save As:"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,15,144,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,76,144,50,14
+    EDITTEXT        IDC_EDIT1,15,122,110,14,ES_AUTOHSCROLL
+    LISTBOX         IDC_LIST1,15,9,110,104,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DIALOG_BROWSER_PRO_VERTICAL DIALOGEX 0, 0, 63, 289
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    COMBOBOX        IDC_COMBO_TYPE,3,12,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_SORT,3,36,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_OWNERDATA | WS_BORDER | WS_TABSTOP,3,54,60,235
+    LTEXT           "Type:",IDC_STATIC,3,2,20,8
+    LTEXT           "Sort By:",IDC_STATIC,3,26,27,8
+END
+
+IDD_DIALOG_BROWSER_MAIN_POPUP DIALOGEX 0, 0, 640, 480
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Object Browser"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TAB1,"SysTabControl32",WS_TABSTOP,0,0,639,479
+END
+
+IDD_DIALOG_BROWSER_MAIN_CHILD DIALOGEX 0, 0, 640, 100
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_THICKFRAME
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TAB1,"SysTabControl32",WS_TABSTOP,0,0,639,99
+END
+
+IDD_DIALOG_BROWSER_PRO_HORIZONTAL DIALOGEX 0, 0, 445, 80
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    COMBOBOX        IDC_COMBO_TYPE,3,11,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_SORT,3,35,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_ALIGNLEFT | LVS_OWNERDATA | WS_BORDER | WS_TABSTOP,69,0,376,80
+    LTEXT           "Type:",IDC_STATIC,3,1,20,8
+    LTEXT           "Sort By:",IDC_STATIC,3,25,27,8
+END
+
+IDD_DIALOG_EDITOR_OBJECT DIALOGEX 0, 0, 441, 260
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Object Editor"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,322,239,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,384,239,50,14
+    LTEXT           "Name:",IDC_STATIC,7,7,22,8
+    LTEXT           "Object Name",IDC_STATIC_OBJECT_NAME,33,7,222,8
+    CONTROL         "",IDC_STATIC_OBJECT_IMAGE,"Static",SS_BITMAP,265,7,15,13
+    CONTROL         "Flat",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,27,28,10
+    CONTROL         "No Block",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,38,43,10
+    CONTROL         "Multi Hex",IDC_CHECK3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,49,45,10
+    CONTROL         "Trans None",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,27,53,10
+    CONTROL         "Trans Wall",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,38,49,10
+    CONTROL         "Trans Glass",IDC_CHECK6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,49,53,10
+    CONTROL         "Trans Steam",IDC_CHECK7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,130,27,56,10
+    CONTROL         "Trans Energy",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,130,38,59,10
+    CONTROL         "Trans Red",IDC_CHECK9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,130,49,49,10
+    CONTROL         "Shoot Thru",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,205,28,51,10
+    CONTROL         "Light Thru",IDC_CHECK11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,205,39,48,10
+    GROUPBOX        "Light",IDC_STATIC,265,137,169,48
+    GROUPBOX        "Flags",IDC_STATIC,7,16,249,49
+    LTEXT           "Distance:",IDC_STATIC,269,149,31,8
+    LTEXT           "Intensity:",IDC_STATIC,269,167,32,8
+    COMBOBOX        IDC_COMBO_LIGHT_DIST,306,147,32,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_LIGHT_INTENSITY,306,164,32,14,ES_AUTOHSCROLL | ES_NUMBER
+    GROUPBOX        "Critter",IDC_STATIC,265,187,169,47
+    LTEXT           "AI Packet:",IDC_STATIC,269,200,34,8
+    LTEXT           "Team Num:",IDC_STATIC,269,217,37,8
+    LTEXT           "%",IDC_STATIC,341,167,8,8
+    LTEXT           "Hexes",IDC_STATIC,341,149,21,8
+    COMBOBOX        IDC_COMBO_AI_PACKET,306,197,124,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_TEAM_NUMBER,306,214,32,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Script:",IDC_STATIC,7,240,22,8
+    COMBOBOX        IDC_COMBO_SCRIPT,30,238,226,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Inventory",IDC_STATIC,7,67,249,167
+    PUSHBUTTON      "Add",IDC_BUTTON_INV_ADD,12,81,39,14
+    PUSHBUTTON      "Clear All",IDC_BUTTON_INV_CLEAR,57,81,39,14
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_OWNERDATA | WS_BORDER | WS_TABSTOP,12,98,239,131
+    COMBOBOX        IDC_COMBO_TYPE,116,82,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Type:",IDC_STATIC,116,72,20,8
+    COMBOBOX        IDC_COMBO_SORT,179,82,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Sort By:",IDC_STATIC,179,72,27,8
+END
+
+IDD_DIALOG_COLOUR_SELECTOR DIALOGEX 0, 0, 101, 160
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Colour Selector"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,139,39,14
+    PUSHBUTTON      "Cancel",IDCANCEL,52,139,42,14
+    CONTROL         "",IDC_SLIDER_RED,"msctls_trackbar32",TBS_VERT | TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,9,24,17,89
+    CONTROL         "",IDC_SLIDER_GREEN,"msctls_trackbar32",TBS_VERT | TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,42,24,17,89
+    CONTROL         "",IDC_SLIDER_BLUE,"msctls_trackbar32",TBS_VERT | TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,77,24,17,89
+    EDITTEXT        IDC_EDIT_RED,7,116,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_GREEN,39,116,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_BLUE,70,116,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "",IDC_STATIC_COLOUR_BOX,7,7,87,13
+END
+
+IDD_DIALOG_PROGRESS DIALOGEX 0, 0, 185, 28
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "Progress Bar"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",WS_BORDER,7,7,171,14
+END
+
+IDD_DIALOG_SET_AMBIENT_INTENSITY DIALOGEX 0, 0, 143, 71
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "Set Ambient Light Intensity"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,27,50,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,86,50,50,14
+    CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,7,7,88,15
+    COMBOBOX        IDC_COMBO1,36,29,100,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT1,96,9,28,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "%",IDC_STATIC,127,11,8,8
+    LTEXT           "Presets:",IDC_STATIC,7,31,28,8
+END
+
+IDD_DIALOG_ABOUT DIALOGEX 0, 0, 239, 150
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,182,129,50,14
+    LTEXT           "Fallout 2 V.E. Mapper",IDC_STATIC,7,14,225,8
+    LTEXT           "This started as a utility to set light colour values for objects and prototypes, but has since evolved into a basic mapper. Be aware that this is ALPHA software and is largely untested.",IDC_STATIC,7,29,225,30
+    LTEXT           "Keys:",IDC_STATIC,7,61,19,8
+    LTEXT           "You Can find most keyboard shortcuts in the main menu.\nThe CTRL key can be used for scrolling the map and extending certain actions eg. repeated selecting and pasting objects. CTRL+Shift to remove objects from selection.",IDC_STATIC,7,72,225,39
+END
+
+IDD_DIALOG_INV_QUANTITY DIALOGEX 0, 0, 121, 50
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Quantity"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,29,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,64,29,50,14
+    EDITTEXT        IDC_EDIT1,7,7,107,14,ES_AUTOHSCROLL | ES_NUMBER
+END
+
+IDD_DIALOG_ITEM_SELECTOR DIALOGEX 0, 0, 405, 260
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Item Selector"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,290,239,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,348,239,50,14
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_OWNERDATA | WS_BORDER | WS_TABSTOP,7,37,390,196
+    COMBOBOX        IDC_COMBO_TYPE,7,17,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_SORT,73,17,58,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Type:",IDC_STATIC,7,7,20,8
+    LTEXT           "Sort By:",IDC_STATIC,73,7,27,8
+END
+
+IDD_DIALOG_ITEM_AMMO DIALOGEX 0, 0, 201, 96
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Done",IDOK,144,75,50,14
+    COMBOBOX        IDC_COMBO1,32,7,157,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Select:",IDC_STATIC,7,9,23,8
+    LTEXT           "Adjust:",IDC_STATIC,7,29,24,8
+    CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,26,36,150,15
+    LTEXT           "Quantity:",IDC_STATIC,67,59,31,8
+    LTEXT           "9999999999",IDC_STATIC_QUANTITY,100,59,41,8
+    LTEXT           "None",IDC_STATIC,7,43,18,8
+    LTEXT           "Max",IDC_STATIC,180,43,14,8
+END
+
+IDD_DIALOG_SET_MAP_SCRIPT DIALOGEX 0, 0, 263, 50
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Set Map Script"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,152,29,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,206,29,50,14
+    LTEXT           "Script:",IDC_STATIC,7,9,22,8
+    COMBOBOX        IDC_COMBO_SCRIPT,30,7,226,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_DIALOG_CREATE_SPATIAL_SCRIPT DIALOGEX 0, 0, 263, 50
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Set Spatial Script"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,152,29,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,206,29,50,14
+    LTEXT           "Script:",IDC_STATIC,7,9,22,8
+    COMBOBOX        IDC_COMBO_SCRIPT,30,7,226,30,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Radius:",IDC_STATIC,7,28,25,8
+    EDITTEXT        IDC_EDIT1,33,26,40,14,ES_AUTOHSCROLL | ES_NUMBER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_LIST_SELECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 133
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 136
+    END
+
+    IDD_DIALOG_LIST_SELECT_EDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 134
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 158
+    END
+
+    IDD_DIALOG_BROWSER_PRO_VERTICAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+    END
+
+    IDD_DIALOG_BROWSER_MAIN_POPUP, DIALOG
+    BEGIN
+        RIGHTMARGIN, 639
+        BOTTOMMARGIN, 479
+    END
+
+    IDD_DIALOG_BROWSER_MAIN_CHILD, DIALOG
+    BEGIN
+        RIGHTMARGIN, 639
+        BOTTOMMARGIN, 99
+    END
+
+    IDD_DIALOG_BROWSER_PRO_HORIZONTAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 329
+    END
+
+    IDD_DIALOG_EDITOR_OBJECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 434
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 253
+    END
+
+    IDD_DIALOG_COLOUR_SELECTOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 94
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 153
+    END
+
+    IDD_DIALOG_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 178
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 21
+    END
+
+    IDD_DIALOG_SET_AMBIENT_INTENSITY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 136
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 64
+    END
+
+    IDD_DIALOG_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 232
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 143
+    END
+
+    IDD_DIALOG_INV_QUANTITY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 114
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+
+    IDD_DIALOG_ITEM_SELECTOR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 398
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 253
+    END
+
+    IDD_DIALOG_ITEM_AMMO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
+    IDD_DIALOG_SET_MAP_SCRIPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 256
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+
+    IDD_DIALOG_CREATE_SPATIAL_SCRIPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 256
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_LIST_SELECT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_LIST_SELECT_EDIT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_BROWSER_PRO_VERTICAL AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_BROWSER_MAIN_POPUP AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_BROWSER_MAIN_CHILD AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_BROWSER_PRO_HORIZONTAL AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_EDITOR_OBJECT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_COLOUR_SELECTOR AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_PROGRESS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_SET_AMBIENT_INTENSITY AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_ABOUT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_INV_QUANTITY AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_ITEM_SELECTOR AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_ITEM_AMMO AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_SET_MAP_SCRIPT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_CREATE_SPATIAL_SCRIPT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATOR1 ACCELERATORS
+BEGIN
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "C",            ID_EDIT_COPYLEVEL,      VIRTKEY, SHIFT, CONTROL, NOINVERT
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL, NOINVERT
+    VK_DELETE,      ID_EDIT_DELETE,         VIRTKEY, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTELEVEL,     VIRTKEY, SHIFT, CONTROL, NOINVERT
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    "Q",            ID_FILE_QUIT,           VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
+    VK_NEXT,        ID_LEVEL_DOWN,          VIRTKEY, NOINVERT
+    VK_PRIOR,       ID_LEVEL_UP,            VIRTKEY, NOINVERT
+    VK_F1,          ID_OBJECTTYPESSELECTABLE_ALLTYPESSELECTABLE, VIRTKEY, SHIFT, CONTROL, NOINVERT
+    VK_F2,          ID_OBJECTTYPESSELECTABLE_CRITTERS, VIRTKEY, CONTROL, NOINVERT
+    VK_F1,          ID_OBJECTTYPESSELECTABLE_ITEMS, VIRTKEY, CONTROL, NOINVERT
+    VK_F6,          ID_OBJECTTYPESSELECTABLE_MISC, VIRTKEY, CONTROL, NOINVERT
+    VK_F3,          ID_OBJECTTYPESSELECTABLE_SCENERY, VIRTKEY, CONTROL, NOINVERT
+    VK_F5,          ID_OBJECTTYPESSELECTABLE_TILES, VIRTKEY, CONTROL, NOINVERT
+    VK_F4,          ID_OBJECTTYPESSELECTABLE_WALLS, VIRTKEY, CONTROL, NOINVERT
+    VK_DOWN,        ID_SCROLL_MAP_DOWN,     VIRTKEY, NOINVERT
+    VK_LEFT,        ID_SCROLL_MAP_LEFT,     VIRTKEY, NOINVERT
+    VK_RIGHT,       ID_SCROLL_MAP_RIGHT,    VIRTKEY, NOINVERT
+    VK_UP,          ID_SCROLL_MAP_UP,       VIRTKEY, NOINVERT
+    VK_TAB,         ID_SHIFT_WINDOW_FOCUS,  VIRTKEY, NOINVERT
+    "B",            ID_VIEW_BLOCKERS,       VIRTKEY, NOINVERT
+    VK_F2,          ID_VIEW_CRITTERS,       VIRTKEY, NOINVERT
+    "H",            ID_VIEW_HEXES,          VIRTKEY, NOINVERT
+    VK_F1,          ID_VIEW_ITEMS,          VIRTKEY, NOINVERT
+    VK_F6,          ID_VIEW_MISC,           VIRTKEY, NOINVERT
+    "R",            ID_VIEW_ROOVES,         VIRTKEY, NOINVERT
+    VK_F3,          ID_VIEW_SCENERY,        VIRTKEY, NOINVERT
+    VK_F5,          ID_VIEW_TILES,          VIRTKEY, NOINVERT
+    VK_F4,          ID_VIEW_WALLS,          VIRTKEY, NOINVERT
+    VK_RIGHT,       ID_EDIT_ROTATECLOCKWISE, VIRTKEY, CONTROL, NOINVERT
+    VK_LEFT,        ID_EDIT_ROTATEANTICLOCKWISE, VIRTKEY, CONTROL, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP_TOOLS        BITMAP                  "mapper\\tools.bmp"
+
+IDB_BITMAP_CHECKBOX     BITMAP                  "mapper\\checkbox.bmp"
+
+IDB_BITMAP_WIELDBOX     BITMAP                  "mapper\\wieldbox.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    ID_FILE_NEW             "New Map"
+    ID_FILE_OPEN            "Open Map"
+    ID_FILE_SAVE            "Save Map"
+    ID_FILE_SAVEAS          "Save Map As..."
+    ID_FILE_QUIT            "Exit Mapper"
+    ID_LEVEL_1              "Set Level 1"
+    ID_LEVEL_2              "Set Level 2"
+END
+
+STRINGTABLE
+BEGIN
+    ID_LEVEL_SELECT         "Select Map Elevation"
+END
+
+STRINGTABLE
+BEGIN
+    ID_HRP_CYCLESELECTEDEDGERECT "Cycle Selected Edge Rect"
+    ID_HRP_ADDNEWEDGERECT   "Add New Edge Rect"
+    ID_HRP_DELETESELECTEDEDGERECT "Delete Selected Edge Rect"
+    ID_HRP_EDITLEFTEDGEOFSELECTEDRECT "Edit Left Edge Of Selected Rect"
+    ID_HRP_EDITRIGHTEDGEOFSELECTEDRECT "Edit Right Edge Of Selected Rect"
+    ID_HRP_EDITTOPEDGEOFSELECTEDRECT "Edit Top Edge Of Selected Rect"
+    ID_HRP_EDITBOTTOMEDGEOFSELECTEDRECT "Edit Bottom Edge Of Selected Rect"
+    ID_EDIT_CUT             "Cut Selected"
+    ID_EDIT_COPY            "Copy Selected"
+    ID_EDIT_PASTE           "Paste Selected"
+    ID_EDIT_DELETE          "Delete Selected"
+    ID_EDIT_COPYLEVEL       "Copy Current Level"
+    ID_EDIT_PASTELEVEL      "Paste To Current Level"
+    ID_VIEW_ROOVES          "Toggle Roof Visibility"
+    ID_VIEW_HEXES           "Toggle Hex Grid Visibility - Not Yet Implemented"
+    ID_VIEW_BLOCKERS        "Toggle Blocker Visibility"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_ITEMS           "Toggle Item Visibility"
+    ID_VIEW_CRITTERS        "Toggle Critter Visibility"
+    ID_VIEW_SCENERY         "Toggle Scenery Visibility"
+    ID_VIEW_WALLS           "Toggle Wall Visibility"
+    ID_VIEW_TILES           "Toggle Tile Visibility"
+    ID_VIEW_MISC            "Toggle Misc Visibility"
+END
+
+STRINGTABLE
+BEGIN
+    ID_LEVEL_3              "Set Level 3"
+    ID_LEVEL_UP             "Up A Level"
+    ID_LEVEL_DOWN           "Down A Level"
+    ID_OBJECTTYPESSELECTABLE_ALLTYPESSELECTABLE "Select All Object Types"
+    ID_OBJECTTYPESSELECTABLE_ITEMS "Toggle Item Selection"
+    ID_OBJECTTYPESSELECTABLE_CRITTERS "Toggle Critter Selection"
+    ID_OBJECTTYPESSELECTABLE_SCENERY "Toggle Scenery Selection"
+    ID_OBJECTTYPESSELECTABLE_WALLS "Toggle Wall Selection"
+    ID_OBJECTTYPESSELECTABLE_TILES "Toggle Tile Selection"
+    ID_OBJECTTYPESSELECTABLE_MISC "Toggle Misc Selection"
+    ID_HRP_TOGGLEVISIBILITYOFEDGES "Toggle Visibility Of Edges"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TEXT_ALL            "all"
+    IDS_TEXT_ITEMS          "items"
+    IDS_TEXT_CRITTERS       "critters"
+    IDS_TEXT_SCENERY        "scenery"
+    IDS_TEXT_WALLS          "walls"
+    IDS_TEXT_TILES          "tiles"
+    IDS_TEXT_MISC           "misc"
+    IDS_SORT_LIST_NUMBER    "List Number"
+    IDS_SORT_NAME           "Name"
+    IDS_SORT_MATERIAL       "Material"
+    IDS_PROTOTYPES          "Prototypes"
+    IDS_SELECTED_OBJECTS    "Selected Objects"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_NONE                "None"
+    IDS_EMITS_LIGHT         "Emits Light"
+    IDS_AMBIENT_LIGHT_BRIGHT "Bright 100%"
+    IDS_AMBIENT_LIGHT_CAVERN "Cavern 50%"
+    IDS_AMBIENT_LIGHT_DUSK  "Dusk Light 40%"
+    IDS_AMBIENT_LIGHT_ENCLAVE "Enclave 60%"
+    IDS_AMBIENT_LIGHT_INDOOR "Indoor  60%"
+    IDS_AMBIENT_LIGHT_BASEMENT "Basement 50%"
+    IDS_AMBIENT_LIGHT_MILITARY_BASE "Military Base 75%"
+    IDS_SORT_BY_SELECTION   "Selection"
+    IDS_SORT_BY_LEVEL_HEXNUM "Level / Hex"
+    IDS_BUIDING_PROTO_CACHE "Building Proto Cache"
+    IDS_ITEM_TYPE_ARMOR     "armor"
+    IDS_ITEM_TYPE_CONTAINER "container"
+    IDS_ITEM_TYPE_DRUG      "drug"
+    IDS_ITEM_TYPE_WEAPON    "weapon"
+END
+
+STRINGTABLE
+BEGIN
+    ID_HRP_EDITISOMETRICMAPEDGES_WEST "Edit Isometric Visible Limit West"
+    ID_HRP_EDITISOMETRICMAPEDGES_NORTH "Edit Isometric Visible Limit North"
+    ID_HRP_EDITISOMETRICMAPEDGES_EAST "Edit Isometric Visible Limit East"
+    ID_HRP_EDITISOMETRICMAPEDGES_SOUTH "Edit Isometric Visible Limit South"
+END
+
+STRINGTABLE
+BEGIN
+    ID_HRP_ISOEDGE_FLAG_WEST 
+                            "Clip All Objects, Not Just Flat Objects At West Limit"
+    ID_HRP_ISOEDGE_FLAG_NORTH 
+                            "Clip All Objects, Not Just Flat Objects At North Limit"
+    ID_HRP_ISOEDGE_FLAG_EAST 
+                            "Clip All Objects, Not Just Flat Objects At East Limit"
+    ID_HRP_ISOEDGE_FLAG_SOUTH 
+                            "Clip All Objects, Not Just Flat Objects At South Limit"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ITEM_TYPE_AMMO      "ammo"
+    IDS_ITEM_TYPE_MISC      "misc"
+    IDS_ITEM_TYPE_KEY       "key"
+END
+
+#endif    // English (United Kingdom) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Australia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENA)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource1.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (Australia) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

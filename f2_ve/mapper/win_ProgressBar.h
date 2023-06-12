@@ -22,54 +22,5 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#define WINVER       _WIN32_WINNT_VISTA
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
-
-#define WIN32_LEAN_AND_MEAN //Exclude rarely-used stuff from Windows headers
-
-#define ISOLATION_AWARE_ENABLED 1
-
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-//Windows Header Files
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <windowsx.h>
-
-//used in errors.cpp
-#include <stdarg.h>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-//used in configTools.cpp
-#include <Shlobj.h>
-#include <Shlwapi.h>
-#include <VersionHelpers.h>
-
-
-extern HINSTANCE phinstDLL;
-
-
-
-/*
-#ifdef BUILD_DLL
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
-
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    void DLL_EXPORT Initialize();
-#ifdef __cplusplus
-}
-#endif
-
-*/
+HWND ProgressBar_Create(HWND hwndParent, HINSTANCE hinstance, const wchar_t* title, WORD range);
+BOOL ProgressBar_Update(HWND hwnd);

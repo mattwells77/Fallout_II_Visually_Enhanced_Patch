@@ -1942,10 +1942,10 @@ LONG WorldMap_Setup() {
     fall_Map_SaveInGame(1);
 
     if (*p_wm_has_vehicle == TRUE) {
-        fall_Set_Background_Sound(p_wm_world_music_car, 12);//("20car", 12);
+        fall_Background_Sound_Set(p_wm_world_music_car, 12);//("20car", 12);
     }
     else
-        fall_Set_Background_Sound(p_wm_world_music, 12);// ("23world", 12);
+        fall_Background_Sound_Set(p_wm_world_music, 12);// ("23world", 12);
 
     fall_NotifyBar_Disable();
     fall_DisableGameEvents();

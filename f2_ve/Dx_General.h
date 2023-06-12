@@ -147,6 +147,8 @@ extern ID3D11PixelShader* pd3d_PS_Colour_32_Brightness_ZeroMasked;
 
 extern ID3D11PixelShader* pd3d_PS_Colour_32_RevAlpha_ZeroMasked;
 
+extern ID3D11PixelShader* pd3d_PS_Outline_Quad_32;
+
 extern ID3D11SamplerState* pd3dPS_SamplerState_Point;
 extern ID3D11SamplerState* pd3dPS_SamplerState_Linear;
 
@@ -155,6 +157,10 @@ extern ID3D11BlendState* pBlendState_One;
 extern ID3D11BlendState* pBlendState_Two;
 extern ID3D11BlendState* pBlendState_Three;
 extern ID3D11BlendState* pBlendState_Four;
+
+
+extern ID3D11Buffer* pVB_Quad_IndexBuffer;
+extern ID3D11Buffer* pVB_Quad_Line_IndexBuffer;
 
 //The maximum supported texture width or height for your graphics card.
 extern UINT max_texDim;
@@ -180,6 +186,8 @@ bool SetScreenProjectionMatrix_XM(DWORD width, DWORD height);
 DirectX::XMMATRIX *GetScreenProjectionMatrix_XM();
 
 bool CreateQuadVB(ID3D11Device* pD3DDev, unsigned int width, unsigned int height, ID3D11Buffer** plpVB);
+bool CreateQuadVB_LineStrip(ID3D11Device* pD3DDev, unsigned int width, unsigned int height, ID3D11Buffer** lpVB);
+bool CreateQuadrilateralVB_LineStrip(ID3D11Device* pD3DDev, POINT* p_lb, POINT* p_lt, POINT* p_rt, POINT* p_rb, ID3D11Buffer** lpVB);
 
 bool Shader_Main_Setup();
 void Shader_Main_Destroy();
