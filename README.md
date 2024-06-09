@@ -17,4 +17,4 @@ In it's current state it should be used for testing only. You should also only u
 - A new way to represent lights in-game for a more natural appearance, original lighting is also improved without the palette limitation.
 - Improved fading effects between screens.
 - Transparency effects when hiding rooves and item and critter visibility when using the fog of war feature(not fully implemented yet).
-
+- Basic map editor, for editing the light colour for objects and their prototypes.
